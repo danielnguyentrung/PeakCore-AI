@@ -3,3 +3,8 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "email_sender" {
+  description = "Generic Email Address for PeakCore"
+  type        = string
+}

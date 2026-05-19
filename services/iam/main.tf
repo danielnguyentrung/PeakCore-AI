@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_role_attachment" {
 
 # JSON of Bedrock IAM Policy
 
-data "aws_iam_policy_document" "bedrock_invoke_role" {
+data "aws_iam_policy_document" "bedrock_policy_doc" {
   statement {
     effect = "Allow"
 
@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "bedrock_invoke_role" {
 
 resource "aws_iam_policy" "bedrock_invoke_policy" {
   name = "bedrock-invoke-policy"
-  policy = data.aws_iam_policy_document.bedrock_invoke_role.json
+  policy = data.aws_iam_policy_document.bedrock_policy_doc.json
 }
 
 # Bedrock Policy attachment to Lambda Function
@@ -60,7 +60,7 @@ resource "aws_iam_role_policy_attachment" "bedrock_policy_attachment" {
 
 # JSON of DynamoDB IAM Policy 
 
-data "aws_iam_policy_document" "dynamodb_role" { 
+data "aws_iam_policy_document" "dynamodb_policy_doc" { 
   statement {
     effect = "Allow" 
     actions = [
@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "dynamodb_role" {
       "dynamodb:Query",
       "dynamodb:Scan" 
     ]
-    resources = ["*"]
+    resources = [var.dynamodb_table_arn]
   }
 }
 
@@ -80,7 +80,7 @@ data "aws_iam_policy_document" "dynamodb_role" {
 
 resource "aws_iam_policy" "dynamodb_policy" {
   name = "dynamodb-policy"
-  policy = data.aws_iam_policy_document.dynamodb_role.json
+  policy = data.aws_iam_policy_document.dynamodb_policy_doc.json
 }
 
 # DynamoDB policy attachment to Lambda Function
@@ -94,24 +94,30 @@ resource "aws_iam_policy" "dynamodb_policy" {
 
 # JSON S3 IAM Policy 
 
-data "aws_iam_policy_document" "s3_role" {
+data "aws_iam_policy_document" "s3_policy_doc" {
   statement {
-    effect = "Allow"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = [var.s3_frontend_arn, var.s3_workout_plans_arn]
+  }
+
+  statement {
+    effect = "Allow" 
     actions = [
       "s3:GetObject",
       "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:ListBucket"
+      "s3:DeleteObject"
     ]
-    resources = ["*"]
+    resources = ["${var.s3_frontend_arn}/*", "${var.s3_workout_plans_arn}/*"]
   }
 }
+
 
 # S3 policy 
 
 resource "aws_iam_policy" "s3_policy" {
   name = "s3-policy"
-  policy = data.aws_iam_policy_document.s3_role.json
+  policy = data.aws_iam_policy_document.s3_policy_doc.json
 }
 
 # s3 policy attachment 
@@ -125,15 +131,16 @@ resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
 
 # JSON of SQS Queue IAM Policy
 
-data "aws_iam_policy_document" "sqs_role" {
+data "aws_iam_policy_document" "sqs_policy_doc" {
   statement {
     effect = "Allow"
     actions = [
       "sqs:SendMessage",
       "sqs:ReceiveMessage", 
-      "sqs:DeleteMessage"
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes"
     ]
-    resources = ["*"]
+    resources = [var.sqs_queue_arn]
   }
 }
 
@@ -141,7 +148,7 @@ data "aws_iam_policy_document" "sqs_role" {
 
 resource "aws_iam_policy" "sqs_policy" {
   name = "sqs-policy" 
-  policy = data.aws_iam_policy_document.sqs_role.json
+  policy = data.aws_iam_policy_document.sqs_policy_doc.json
 }
 
 # SQS Policy Attachment 
@@ -155,7 +162,7 @@ resource "aws_iam_role_policy_attachment" "sqs_policy_attachment" {
 
 # JSON of SES IAM Policy
 
-data "aws_iam_policy_document" "ses_role" {
+data "aws_iam_policy_document" "ses_policy_doc" {
   statement {
     effect = "Allow"
     actions = [
@@ -170,7 +177,7 @@ data "aws_iam_policy_document" "ses_role" {
 
 resource "aws_iam_policy" "ses_policy" {
   name = "ses-policy" 
-  policy = data.aws_iam_policy_document.ses_role.json 
+  policy = data.aws_iam_policy_document.ses_policy_doc.json 
 }
 
 # SES Policy Attachment
