@@ -7,6 +7,7 @@ module "api_gateway" {
 
 module "bedrock" {
   source = "./services/bedrock"
+  peakcore_model = var.peakcore_model 
 }
 
 # CLOUDFRONT MODULE 
