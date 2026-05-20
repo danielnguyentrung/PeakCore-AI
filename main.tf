@@ -43,7 +43,7 @@ module "fargate" {
 
 module "iam" {
   source = "./services/iam"
-  dynamodb_table_arn = module.dynamodb.peakcore_users_table_arn
+  dynamodb_table_arn = module.dynamodb.dynamodb_table_arn
   s3_frontend_arn = module.s3.s3_frontend_arn
   s3_workout_plans_arn = module.s3.s3_workout_plans_arn
   sqs_queue_arn = module.sqs.sqs_queue_arn
