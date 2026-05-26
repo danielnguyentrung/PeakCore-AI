@@ -9,7 +9,7 @@ logger.setLevel(logging.INFO)
 sqs = boto3.client("sqs")
 SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
 
-INPUT_FIELDS = {
+input_fields = {
     "first_name": str,
     "last_name": str,
     "gender": str, 
@@ -28,7 +28,7 @@ INPUT_FIELDS = {
     "environment_preference": str
 }
 
-MULTISELECT_FIELDS = [
+multiselect_fields = [
     "goals", "home_gym_equipment"
 ]
 
@@ -42,7 +42,7 @@ def input_validation(body, input_fields):
             return {"statusCode": 400, "body": json.dumps({"error": f"{key} must be of an integer"})}
         
         if not isinstance(body[key], value):
-            return {"statusCode": 400, "body": json.dumps({"error": f"{key} must be of type {value}"})}
+            return {"statusCode": 400, "body": json.dumps({"error": f"{key} must be of type {value.__name__}"})}
     
     return 
 
@@ -59,8 +59,25 @@ def multiselect_validation(body, multi_fields):
         
         if len(body[field]) == 0:
             return {"statusCode": 400, "body": json.dumps({"error": f"{field} cannot be empty"})}
+    
+    return
+
+def conditional_validation():
 
     
-
-
 def lambda_handler(event, context):
+    body = json.loads(event.get("body") or "{}")
+
+    input_error = input_validation(body, input_fields)
+    if input_error: 
+        return input_error
+    multiselect_error = multiselect_validation(body, multiselect_fields)
+    if multiselect_error:
+        return multiselect_error
+    
+    if body["event_name"] 
+    
+    claims = event["requestContext"]["authorizer"]["claims"]
+    user_id = claims["sub"]
+    user_email = claims["email"]
+
