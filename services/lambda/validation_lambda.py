@@ -47,9 +47,9 @@ def input_validation(body, input_fields):
     return 
 
 
-def multiselect_validation(body, multi_fields):
+def multiselect_validation(body, multiselect_fields):
 
-    for field in multi_fields:
+    for field in multiselect_fields:
 
         if field not in body:
             return {"statusCode": 400, "body": json.dumps({"error": f"{field} is required"})}
@@ -62,7 +62,10 @@ def multiselect_validation(body, multi_fields):
     
     return
 
-def conditional_validation():
+def conditional_validation(body):
+
+   if body["event_training"] == True and ("event_name" not in body or body["event_name"] == "" or body["event_name"] is None):
+        return {"statusCode": 400, "body": json.dumps({"error": "event_name cannot be empty"})}
 
     
 def lambda_handler(event, context):
