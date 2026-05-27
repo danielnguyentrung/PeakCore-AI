@@ -25,12 +25,10 @@ input_fields = {
     "workout_duration": int, 
     "job_difficulty": str, 
     "injuries": str,
-    "environment_preference": str
+    "environment": str
 }
 
-multiselect_fields = [
-    "goals", "home_gym_equipment"
-]
+multiselect_fields = ["goals"]
 
 def input_validation(body, input_fields):
 
@@ -64,23 +62,47 @@ def multiselect_validation(body, multiselect_fields):
 
 def conditional_validation(body):
 
-   if body["event_training"] == True and ("event_name" not in body or body["event_name"] == "" or body["event_name"] is None):
+    if body["event_training"] == True and ("event_name" not in body or body["event_name"] == "" or body["event_name"] is None):
         return {"statusCode": 400, "body": json.dumps({"error": "event_name cannot be empty"})}
+   
+    if body["environment"] == "Home gym" and ("home_gym_equipment" not in body or body["home_gym_equipment"] == "" or body["home_gym_equipment"] is None):
+        return {"statusCode": 400, "body": json.dumps({"error": "Home gym equipment selection cannot be empty"})}
+   
+    return 
 
-    
 def lambda_handler(event, context):
     body = json.loads(event.get("body") or "{}")
 
     input_error = input_validation(body, input_fields)
     if input_error: 
         return input_error
+    
     multiselect_error = multiselect_validation(body, multiselect_fields)
     if multiselect_error:
         return multiselect_error
     
-    if body["event_name"] 
+    conditional_error = conditional_validation(body)
+    if conditional_error:
+        return conditional_error
     
     claims = event["requestContext"]["authorizer"]["claims"]
-    user_id = claims["sub"]
     user_email = claims["email"]
+    user_id = claims["sub"]
+
+    message = {
+        "user_id": user_id,
+        "email": user_email,
+        "profile": body
+    }
+    try: 
+        sqs.send_message(
+            QueueUrl = SQS_QUEUE_URL,
+            MessageBody=json.dumps(message)
+        )
+    
+    except Exception as e:
+        logger.error(f"Failed to send message to SQS: {e}")
+        return {"statusCode": 500, "body": json.dumps({"error": "Internal server error, please try again later"})}
+
+    return {"statusCode": 202, "body": json.dumps({"message": "Your workout plan is being generated, you will recieve an email shortly!"})}
 
