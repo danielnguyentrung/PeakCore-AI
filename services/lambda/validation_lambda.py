@@ -64,11 +64,16 @@ def conditional_validation(body):
 
     if body["event_training"] == True and ("event_name" not in body or body["event_name"] == "" or body["event_name"] is None):
         return {"statusCode": 400, "body": json.dumps({"error": "event_name cannot be empty"})}
+    
+    if body["environment"] == "Home gym":
+        if "home_gym_equipment" not in body: 
+            return{"statusCode": 400, "body": json.dumps({"error": "home_gym_equipment is required"})}
+        if not isinstance(body["home_gym_equipment"], list):
+            return {"statusCode": 400, "body": json.dumps({"error": "home_gym_equipment must be a list"})}
+        if len(body["home_gym_equipment"]) == 0:
+            return {"statusCode": 400, "body": json.dumps ({"error": "home_gym_equipment cannot be empty"})}
    
-    if body["environment"] == "Home gym" and ("home_gym_equipment" not in body or body["home_gym_equipment"] == "" or body["home_gym_equipment"] is None):
-        return {"statusCode": 400, "body": json.dumps({"error": "Home gym equipment selection cannot be empty"})}
-   
-    return 
+    return None  
 
 def lambda_handler(event, context):
     body = json.loads(event.get("body") or "{}")
