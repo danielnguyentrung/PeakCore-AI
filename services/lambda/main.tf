@@ -1,12 +1,45 @@
+# Package Lambda Files 
+
+data "archive_file" "validation_zip" {
+  type = "zip"
+  source_file = "${path.module}/validation_lambda.py"
+  output_path = "${path.module}/validation.zip"
+}
+
+data "archive_file" "core_zip" {
+  type = "zip"
+  source_file = "${path.module}/peakcore_core.py"
+  output_path = "${path.module}/core.zip"
+}
+
+data "archive_file" "read_zip" {
+  type = "zip"
+  source_file = "${path.module}/read_lambda.py"
+  output_path = "${path.module}/read.zip"
+}
+
+data "archive_file" "notification_zip" {
+  type = "zip"
+  source_file = "${path.module}/workout_check.py"
+  output_path = "${path.module}/notification.zip"
+}
+
 resource "aws_lambda_function" "peakcore_validation" {
   function_name = "peakcore-validation"
-  runtime     = "python3.12"
-  handler     = "lambda_function.lambda_handler"
-  role          = var.lambda_execution_role_arn 
+  runtime       = "python3.12"
+  handler       = "validation_lambda.lambda_handler"
+  role          =  var.lambda_execution_role_arn 
 
-  filename         = "${path.module}/lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/lambda.zip")
-}
+  filename         = data.archive_file.validation_zip.output_path
+  source_code_hash = data.archive_file.validation_zip.output_base64sha256
+
+
+    environment {
+      variables = {
+        SQS_QUEUE_URL = var.sqs_queue_url
+      }
+    }
+  }
 
 resource "aws_lambda_function" "peakcore_read" {
   function_name = "peakcore-read"
