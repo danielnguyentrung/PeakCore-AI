@@ -1,10 +1,10 @@
 variable "peakcore_validation_arn" {
-    description = "Name of the PeakCore Validation Lambda Function"
+    description = "ARN of the PeakCore Validation Lambda Function"
     type = string 
 }
 
-variable "peakcore_read_name" {
-    description = "Name of the PeakCore Read Lambda Function"
+variable "peakcore_read_arn" {
+    description = "ARN of the PeakCore Read Lambda Function"
     type = string 
 }
 
