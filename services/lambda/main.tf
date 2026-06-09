@@ -1,9 +1,9 @@
 # Package Lambda Files 
 
-data "archive_file" "validation_zip" {
+data "archive_file" "validate_zip" {
   type = "zip"
-  source_file = "${path.module}/validation_lambda.py"
-  output_path = "${path.module}/validation.zip"
+  source_file = "${path.module}/peakcore_validate.py"
+  output_path = "${path.module}/validate.zip"
 }
 
 data "archive_file" "core_zip" {
@@ -14,24 +14,24 @@ data "archive_file" "core_zip" {
 
 data "archive_file" "read_zip" {
   type = "zip"
-  source_file = "${path.module}/read_lambda.py"
+  source_file = "${path.module}/peakcore_read.py"
   output_path = "${path.module}/read.zip"
 }
 
 data "archive_file" "notification_zip" {
   type = "zip"
-  source_file = "${path.module}/workout_check.py"
+  source_file = "${path.module}/peakcore_check.py"
   output_path = "${path.module}/notification.zip"
 }
 
-resource "aws_lambda_function" "peakcore_validation" {
-  function_name = "peakcore-validation"
+resource "aws_lambda_function" "peakcore_validate" {
+  function_name = "peakcore-validate"
   runtime       = "python3.12"
-  handler       = "validation_lambda.lambda_handler"
+  handler       = "peakcore_validate.lambda_handler"
   role          =  var.lambda_execution_role_arn 
 
-  filename         = data.archive_file.validation_zip.output_path
-  source_code_hash = data.archive_file.validation_zip.output_base64sha256
+  filename         = data.archive_file.validate_zip.output_path
+  source_code_hash = data.archive_file.validate_zip.output_base64sha256
 
 
     environment {
@@ -43,20 +43,50 @@ resource "aws_lambda_function" "peakcore_validation" {
 
 resource "aws_lambda_function" "peakcore_read" {
   function_name = "peakcore-read"
-  runtime = "python3.12"
-  handler = "lambda_function.lambda_handler"
-  role          = var.lambda_execution_role_arn
+  runtime       = "python3.12"
+  handler       = "peakcore_read.lambda_handler"
+  role          =  var.lambda_execution_role_arn
 
-  filename = "${path.module}/lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/lambda.zip")
-}
+  filename = data.archive_file.read_zip.output_path
+  source_code_hash = data.archive_file.read_zip.output_base64sha256
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+      }
+    }
+  }
 
 resource "aws_lambda_function" "peakcore_core" {
   function_name = "peakcore-core"
   runtime       = "python3.12"
-  handler       = "lambda_function.lambda_handler"
-  role          = var.lambda_execution_role_arn
+  handler       = "peakcore_core.lambda_handler"
+  role          =  var.lambda_execution_role_arn
 
-  filename         = "${path.module}/lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/lambda.zip")
-}
+  filename         = data.archive_file.core_zip.output_path
+  source_code_hash = data.archive_file.core_zip.output_base64sha256
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+      BEDROCK_MODEL_ID = var.bedrock_model_id
+      SES_SENDER_EMAIL = var.ses_sender_email
+      }
+    }
+  }
+resource "aws_lambda_function" "peakcore_check" {
+  function_name = "peakcore-check"
+  runtime       = "python3.12"
+  handler       = "peakcore_check.lambda_handler"
+  role          =  var.lambda_execution_role_arn
+
+  filename         = data.archive_file.notification_zip.output_path
+  source_code_hash = data.archive_file.notification_zip.output_base64sha256
+
+  environment {
+    variables = {
+      SES_SENDER_EMAIL = var.ses_sender_email
+      APP_URL = var.app_url
+      }
+    }
+  }
