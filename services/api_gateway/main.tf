@@ -9,7 +9,7 @@ resource "aws_apigatewayv2_authorizer" "gateway_auth" {
     name = "gateway_auth"
     identity_sources = ["$request.header.Authorization"]
     jwt_configuration {
-        audience = [var.user_pool_id]
+        audience = [var.user_pool_client_id]
         issuer = "https://cognito-idp.us-east-1.amazonaws.com/${var.user_pool_id}"
     }
 }
@@ -40,4 +40,10 @@ resource "aws_apigatewayv2_route" "validation_route" {
     target = "integrations/${aws_apigatewayv2_integration.validation_integration.id}"
     authorization_type = "JWT"
     authorizer_id = aws_apigatewayv2_authorizer.gateway_auth.id
+}
+
+resource "aws_apigatewayv2_stage" "peakcore_stage" {
+    api_id = aws_apigatewayv2_api.peakcore_gateway.id
+    name = "$default"
+    auto_deploy = true
 }
