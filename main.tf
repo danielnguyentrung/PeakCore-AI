@@ -1,7 +1,7 @@
 # API GATEWAY MODULE 
 module "api_gateway" {
   source = "./services/api_gateway"
-  peakcore_validation_arn = module.lambda.
+  peakcore_validation_arn = module.lambda.peakcore_validation_arn
   peakcore_read_arn = module.lambda.peakcore_read_arn
   user_pool_id = module.cognito.user_pool_id
   user_pool_client_id = module.cognito.user_pool_client_id
@@ -42,6 +42,8 @@ module "eventbridge" {
 
 module "fargate" {
   source = "./services/fargate"
+  dynamodb_table_name = module.dynamodb.dynamodb_table_name
+  sqs_queue_url = module.sqs.sqs_queue_url
 }
 
 # IAM MODULE 
@@ -59,6 +61,13 @@ module "iam" {
 module "lambda" {
   source                    = "./services/lambda"
   lambda_execution_role_arn = module.iam.lambda_execution_role_arn
+  sqs_queue_arn = module.sqs.sqs_queue_arn 
+  sqs_queue_url = module.sqs.sqs_queue_url
+  dynamodb_table_name = module.dynamodb.dynamodb_table_name
+  bedrock_model_id = module.bedrock.bedrock_model_id
+  ses_sender_email = var.email_sender
+  app_url = module.api_gateway.app_url
+  
 }
 
 # S3 MODULE 
