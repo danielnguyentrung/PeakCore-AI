@@ -186,3 +186,28 @@ resource "aws_iam_role_policy_attachment" "ses_policy_attachment" {
   role = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.ses_policy.arn
 }
+
+# FARGATE 
+
+data "aws_iam_policy_document" "fargate_policy_doc" {
+  statement {
+    effect = "Allow" 
+    actions = ["sts:AssumeRole"]
+  
+  principals {
+    type = "Service"
+    identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "fargate_execution_role" {
+  name = "fargate-execution-role"
+  assume_role_policy = data.aws_iam_policy_document.fargate_policy_doc.json
+}
+
+resource "aws_iam_role_policy_attachment" "fargate_policy_attachment" {
+  role = aws_iam_role.fargate_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+

@@ -8,3 +8,7 @@ output "lambda_execution_role_name" {
   value       = aws_iam_role.lambda_execution_role.name
 }
 
+output "fargate_execution_role_arn" {
+  description = "AWS ARN of the Fargate execution role"
+  value       = aws_iam_role.fargate_execution_role.arn
+}
