@@ -8,12 +8,12 @@ variable "s3_frontend_arn" {
     type        = string 
 }
 
-variable "s3_workout_plans_arn" {
-    description = "ARN of the PeakCore Workout Plans"
-    type        = string 
-}
-
 variable "sqs_queue_arn" {
     description = "ARN of the PeakCore SQS Queue"
+    type = string
+}
+
+variable "sqs_notification_queue_arn" {
+    description = "ARN of the notification queue" 
     type = string
 }

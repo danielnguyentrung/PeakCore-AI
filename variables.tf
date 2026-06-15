@@ -14,3 +14,9 @@ variable "peakcore_model" {
   type = string 
   default = "PLACEHOLDER"
 }
+
+variable "app_url" {
+  description = "Frontend app URL for email links"
+  type = string 
+  default = "https://placeholder.cloudfront.net"
+}

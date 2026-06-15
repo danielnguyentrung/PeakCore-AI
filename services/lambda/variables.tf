@@ -13,6 +13,11 @@ variable "sqs_queue_url" {
   type        = string 
 }
 
+variable "sqs_notification_queue_arn" {
+  description = "ARN of the notification queue"
+  type = string 
+}
+
 variable "dynamodb_table_name" {
   description = "Name of the PeakCore DynamoDB table"
   type        = string
@@ -32,3 +37,4 @@ variable "app_url" {
   description = "Frontend app URL for email links"
   type        = string 
 }
+

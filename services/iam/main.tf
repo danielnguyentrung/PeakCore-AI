@@ -90,6 +90,29 @@ resource "aws_iam_policy" "dynamodb_policy" {
     policy_arn = aws_iam_policy.dynamodb_policy.arn
 }
 
+#EventBridge 
+
+data "aws_iam_policy_document" "eventbridge_doc" {
+  statement {
+    effect = "Allow" 
+    actions = ["sts:AssumeRole"]
+  
+  principals {
+    type = "Service"
+    identifiers = ["events.amazonaws.com"]
+    }
+  }
+}
+resource "aws_iam_role" "eventbridge_policy" {
+  name = "eventbrige-policy"
+  assume_role_policy = data.aws_iam_policy_document.eventbridge_doc.json
+}
+
+resource "aws_iam_role_policy_attachment" "eventbridge_policy_attachment" {
+  role = aws_iam_role.eventbridge_policy.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+}
+
 # S3 
 
 # JSON S3 IAM Policy 
@@ -98,7 +121,7 @@ data "aws_iam_policy_document" "s3_policy_doc" {
   statement {
     effect    = "Allow"
     actions   = ["s3:ListBucket"]
-    resources = [var.s3_frontend_arn, var.s3_workout_plans_arn]
+    resources = [var.s3_frontend_arn]
   }
 
   statement {
@@ -108,7 +131,7 @@ data "aws_iam_policy_document" "s3_policy_doc" {
       "s3:PutObject",
       "s3:DeleteObject"
     ]
-    resources = ["${var.s3_frontend_arn}/*", "${var.s3_workout_plans_arn}/*"]
+    resources = ["${var.s3_frontend_arn}/*"]
   }
 }
 
@@ -140,7 +163,7 @@ data "aws_iam_policy_document" "sqs_policy_doc" {
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes"
     ]
-    resources = [var.sqs_queue_arn]
+    resources = [var.sqs_queue_arn, var.sqs_notification_queue_arn]
   }
 }
 

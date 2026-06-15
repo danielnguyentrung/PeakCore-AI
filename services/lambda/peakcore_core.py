@@ -90,7 +90,7 @@ def workout_generator(profile):
         k.	Dip Bars 
         l.	Adjustable Bench
         m.	Other
-        Answer: {profile["home_gym_equipment"]}
+        Answer: {profile.get("home_gym_equipment", "N/A")}
 
     Please structure the workout plan as follow: 
     - Weekly overview
@@ -109,7 +109,7 @@ def workout_generator(profile):
 
     Based on the equipment create a workout based on the setting they have access to: {profile["environment"]}. 
     
-    If they have a home gym utilize the equipment they have selected: Equipment: {profile["home_gym_equipment"]}. If the home gym was not select you may ignore this 
+    If they have a home gym utilize the equipment they have selected: Equipment: {profile.get("home_gym_equipment", "N/A")}. If the home gym was not select you may ignore this 
 
     Include a brief motivational message for the client. 
 
@@ -134,7 +134,7 @@ def db_store(user_id, email, profile, workout_plan):
             "email": email, 
             "profile": profile, 
             "workout_plan": workout_plan, 
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "plan_generated_at": datetime.now(timezone.utc).isoformat()
         }
     )
 

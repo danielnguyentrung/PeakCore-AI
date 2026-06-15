@@ -22,7 +22,7 @@ resource "aws_ecs_task_definition" "peakcore_task" {
             image = "${aws_ecr_repository.peakcore_repository.repository_url}:latest"
             environment = [
                 { name = "DYNAMODB_TABLE_NAME", value = var.dynamodb_table_name },
-                { name = "SQS_QUEUE_URL", value = var.sqs_queue_url }
+                { name = "SQS_NOTIFICATION_QUEUE_URL", value = var.sqs_notification_queue_url }
             ]
         }
     ])

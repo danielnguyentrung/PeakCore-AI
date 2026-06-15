@@ -18,6 +18,9 @@ module "bedrock" {
 
 module "cloudfront" {
   source = "./services/cloudfront"
+  peakcore_bucket_regional_domain_name = module.s3.peakcore_bucket_regional_domain_name
+  s3_frontend_bucket_name = module.s3.s3_frontend_bucket_name
+  s3_frontend_arn = module.s3.s3_frontend_arn
 }
 
 # COGNITO MODULE
@@ -36,6 +39,9 @@ module "dynamodb" {
 
 module "eventbridge" {
   source = "./services/eventbridge"
+  peakcore_cluster_arn = module.fargate.peakcore_cluster_arn
+  peakcore_task_definition_arn = module.fargate.peakcore_task_definition_arn
+  eventbridge_role_arn = module.iam.eventbridge_role_arn
 }
 
 # FARGATE MODULE 
@@ -43,7 +49,8 @@ module "eventbridge" {
 module "fargate" {
   source = "./services/fargate"
   dynamodb_table_name = module.dynamodb.dynamodb_table_name
-  sqs_queue_url = module.sqs.sqs_queue_url
+  sqs_notification_queue_url = module.sqs.sqs_notification_queue_url
+  fargate_execution_role_arn = module.iam.fargate_execution_role_arn
 }
 
 # IAM MODULE 
@@ -52,8 +59,8 @@ module "iam" {
   source = "./services/iam"
   dynamodb_table_arn = module.dynamodb.dynamodb_table_arn
   s3_frontend_arn = module.s3.s3_frontend_arn
-  s3_workout_plans_arn = module.s3.s3_workout_plans_arn
   sqs_queue_arn = module.sqs.sqs_queue_arn
+  sqs_notification_queue_arn = module.sqs.sqs_notification_queue_arn
 }
 
 # LAMBDA MODULE
@@ -63,11 +70,11 @@ module "lambda" {
   lambda_execution_role_arn = module.iam.lambda_execution_role_arn
   sqs_queue_arn = module.sqs.sqs_queue_arn 
   sqs_queue_url = module.sqs.sqs_queue_url
+  sqs_notification_queue_arn = module.sqs.sqs_notification_queue_arn
   dynamodb_table_name = module.dynamodb.dynamodb_table_name
   bedrock_model_id = module.bedrock.bedrock_model_id
   ses_sender_email = var.email_sender
-  app_url = module.api_gateway.app_url
-  
+  app_url = var.app_url
 }
 
 # S3 MODULE 
