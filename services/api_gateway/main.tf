@@ -1,6 +1,13 @@
 resource "aws_apigatewayv2_api" "peakcore_gateway" {
     name = "peakcore-gateway" 
     protocol_type = "HTTP" 
+
+    cors_configuration {
+      allow_origins = ["https://d28mrqncy1yaev.cloudfront.net"]
+      allow_methods = ["GET", "POST", "OPTIONS"]
+      allow_headers = ["Content-Type", "Authorization"]
+      max_age       = 300
+    }
 }
 
 resource "aws_apigatewayv2_authorizer" "gateway_auth" {

@@ -18,7 +18,7 @@ const HOME_EQUIPMENT = [
 ]
 
 const initialForm = {
-  first_name: '', last_name: '', gender: '', age: '', weight: '', height: '', height_unit: 'ft',
+  first_name: '', last_name: '', gender: '', age: '', weight: '', weight_unit: 'kg', height: '', height_unit: 'ft',
   goals: [], fitness_experience: '', fitness_rank: '',
   event_training: false, event_name: 'N/A', event_customization: false,
   work_hours: '', workout_duration: '', job_difficulty: '', injuries: 'None',
@@ -35,6 +35,30 @@ export default function Questionnaire() {
   const navigate = useNavigate()
 
   const updateField = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
+
+  const isStepValid = () => {
+    switch (step) {
+      case 0: {
+        const w = parseFloat(form.weight)
+        const h = parseFloat(form.height)
+        const validWeight = form.weight_unit === 'kg' ? w >= 20 && w <= 300 : w >= 44 && w <= 660
+        const validHeight = form.height_unit === 'cm' ? h >= 50 && h <= 280 : h >= 1 && h <= 9
+        return !!(form.first_name && form.last_name && form.gender && form.age && validWeight && validHeight)
+      }
+      case 1:
+        return form.goals.length > 0 && !!(form.fitness_experience && form.fitness_rank)
+      case 2:
+        if (form.event_training) return !!(form.event_name && form.event_name !== 'N/A')
+        return true
+      case 3:
+        return !!(form.work_hours && form.workout_duration && form.job_difficulty)
+      case 4:
+        if (form.environment === 'Home Gym') return form.home_gym_equipment.length > 0
+        return !!form.environment
+      default:
+        return true
+    }
+  }
 
   const toggleArrayItem = (field, value) => {
     setForm(prev => ({
@@ -111,20 +135,48 @@ export default function Questionnaire() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] px-4 py-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#0a0a0a] px-4 py-8 relative overflow-hidden">
+
+      {/* Background dumbbell decorations */}
+      <svg className="absolute -top-10 -left-16 w-96 h-96 text-cyan-500 opacity-[0.04] rotate-[-30deg] pointer-events-none" viewBox="0 0 120 48" fill="currentColor">
+        <rect x="0" y="12" width="20" height="24" rx="4"/>
+        <rect x="8" y="16" width="10" height="16" rx="2"/>
+        <rect x="18" y="20" width="84" height="8" rx="3"/>
+        <rect x="102" y="16" width="10" height="16" rx="2"/>
+        <rect x="100" y="12" width="20" height="24" rx="4"/>
+      </svg>
+      <svg className="absolute top-1/3 -right-20 w-[500px] h-[500px] text-cyan-400 opacity-[0.04] rotate-[20deg] pointer-events-none" viewBox="0 0 120 48" fill="currentColor">
+        <rect x="0" y="12" width="20" height="24" rx="4"/>
+        <rect x="8" y="16" width="10" height="16" rx="2"/>
+        <rect x="18" y="20" width="84" height="8" rx="3"/>
+        <rect x="102" y="16" width="10" height="16" rx="2"/>
+        <rect x="100" y="12" width="20" height="24" rx="4"/>
+      </svg>
+      <svg className="absolute -bottom-10 left-1/4 w-80 h-80 text-cyan-500 opacity-[0.04] rotate-[10deg] pointer-events-none" viewBox="0 0 120 48" fill="currentColor">
+        <rect x="0" y="12" width="20" height="24" rx="4"/>
+        <rect x="8" y="16" width="10" height="16" rx="2"/>
+        <rect x="18" y="20" width="84" height="8" rx="3"/>
+        <rect x="102" y="16" width="10" height="16" rx="2"/>
+        <rect x="100" y="12" width="20" height="24" rx="4"/>
+      </svg>
+
+      {/* Subtle cyan glow orbs */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"/>
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-3xl pointer-events-none"/>
+
+      <div className="max-w-2xl mx-auto relative z-10">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-400 flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <span className="text-white font-bold text-lg">PeakCore AI</span>
-          </div>
-          <button onClick={signOut} className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
+          </button>
+          <button onClick={() => { signOut(); navigate('/login') }} className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
             Sign out
           </button>
         </div>
@@ -178,15 +230,28 @@ export default function Questionnaire() {
                   <input type="number" value={form.age} onChange={e => updateField('age', e.target.value)}
                     placeholder="25" className={inputClass} min="13" max="100" />
                 </Field>
-                <Field label="Weight (kg)">
-                  <input type="number" value={form.weight} onChange={e => updateField('weight', e.target.value)}
-                    placeholder="80" className={inputClass} />
+                <Field label={`Weight (${form.weight_unit === 'kg' ? '20–300 kg' : '44–660 lb'})`}>
+                  <div className="flex gap-2">
+                    <input type="number" value={form.weight} onChange={e => updateField('weight', e.target.value)}
+                      placeholder={form.weight_unit === 'kg' ? '80' : '176'}
+                      min={form.weight_unit === 'kg' ? 20 : 44}
+                      max={form.weight_unit === 'kg' ? 300 : 660}
+                      className={`${inputClass} flex-1`} />
+                    <select value={form.weight_unit} onChange={e => { updateField('weight_unit', e.target.value); updateField('weight', '') }}
+                      className="bg-[#0a0a0a] border border-[#1e1e1e] text-gray-300 rounded-xl px-2 text-sm focus:border-cyan-500 focus:outline-none">
+                      <option value="kg">kg</option>
+                      <option value="lb">lb</option>
+                    </select>
+                  </div>
                 </Field>
-                <Field label="Height">
+                <Field label={`Height (${form.height_unit === 'cm' ? '50–280 cm' : '1–9 ft'})`}>
                   <div className="flex gap-2">
                     <input type="number" value={form.height} onChange={e => updateField('height', e.target.value)}
-                      placeholder="180" className={`${inputClass} flex-1`} />
-                    <select value={form.height_unit} onChange={e => updateField('height_unit', e.target.value)}
+                      placeholder={form.height_unit === 'cm' ? '180' : '6'}
+                      min={form.height_unit === 'cm' ? 50 : 1}
+                      max={form.height_unit === 'cm' ? 280 : 9}
+                      className={`${inputClass} flex-1`} />
+                    <select value={form.height_unit} onChange={e => { updateField('height_unit', e.target.value); updateField('height', '') }}
                       className="bg-[#0a0a0a] border border-[#1e1e1e] text-gray-300 rounded-xl px-2 text-sm focus:border-cyan-500 focus:outline-none">
                       <option value="cm">cm</option>
                       <option value="ft">ft</option>
@@ -361,8 +426,8 @@ export default function Questionnaire() {
             ) : <div />}
 
             {step < STEPS.length - 1 ? (
-              <button onClick={() => setStep(s => s + 1)}
-                className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-lg shadow-cyan-500/20">
+              <button onClick={() => setStep(s => s + 1)} disabled={!isStepValid()}
+                className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-lg shadow-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed">
                 Continue
               </button>
             ) : (
@@ -385,6 +450,7 @@ export default function Questionnaire() {
 }
 
 // Reusable components
+
 const inputClass = "w-full bg-[#0a0a0a] border border-[#1e1e1e] text-white rounded-xl px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none placeholder-gray-600 transition-colors"
 
 function Field({ label, children }) {
@@ -412,7 +478,7 @@ function OptionButton({ selected, onClick, children }) {
 function ToggleButton({ selected, onClick, children }) {
   return (
     <button onClick={onClick}
-      className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center gap-2 ${
+      className={`py-2.5 px-4 rounded-xl text-sm font-medium border transition-all flex items-center gap-2 ${
         selected
           ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
           : 'bg-[#0a0a0a] border-[#1e1e1e] text-gray-400 hover:border-gray-500'

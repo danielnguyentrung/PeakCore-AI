@@ -1,9 +1,8 @@
 const awsExports = {
   Auth: {
     Cognito: {
-      // Replace these with your Terraform outputs after deploying
-      userPoolId: 'REPLACE_WITH_USER_POOL_ID',
-      userPoolClientId: 'REPLACE_WITH_USER_POOL_CLIENT_ID',
+      userPoolId: 'us-east-1_dh9FLRens',
+      userPoolClientId: '4c5tht1689occe9ertc9c5kjt7',
       loginWith: {
         email: true,
       },
@@ -11,7 +10,6 @@ const awsExports = {
   },
 };
 
-// Replace with your API Gateway URL after deploying
-export const API_URL = 'REPLACE_WITH_API_GATEWAY_URL';
+export const API_URL = 'https://yj6u97jnlb.execute-api.us-east-1.amazonaws.com';
 
 export default awsExports;

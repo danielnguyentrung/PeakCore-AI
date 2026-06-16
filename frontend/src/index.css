@@ -42,6 +42,55 @@ body {
   --amplify-components-tabs-border-color: #1e1e1e;
 }
 
+/* Fix verification screen heading and body text */
+[data-amplify-authenticator] h3,
+[data-amplify-authenticator] [data-amplify-heading] {
+  color: #ffffff !important;
+}
+
+[data-amplify-authenticator] p {
+  color: #9ca3af !important;
+}
+
+/* Fix error alert dark theme */
+[data-amplify-authenticator] .amplify-alert--error {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-amplify-authenticator] .amplify-alert__body,
+[data-amplify-authenticator] .amplify-alert__icon {
+  color: #fca5a5 !important;
+}
+
+/* Fix browser autofill overriding dark theme on inputs */
+[data-amplify-authenticator] input:-webkit-autofill,
+[data-amplify-authenticator] input:-webkit-autofill:hover,
+[data-amplify-authenticator] input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+}
+
+/* Ensure input text and password dots are always visible */
+[data-amplify-authenticator] input {
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+}
+
+/* Make password show/hide eye icon visible */
+[data-amplify-authenticator] button[aria-label*="password"],
+[data-amplify-authenticator] button[aria-label*="Password"] {
+  color: #9ca3af !important;
+  background-color: transparent !important;
+}
+
+[data-amplify-authenticator] button[aria-label*="password"] svg,
+[data-amplify-authenticator] button[aria-label*="Password"] svg {
+  stroke: #9ca3af !important;
+  fill: none !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #141414; }
