@@ -17,13 +17,3 @@ variable "user_pool_client_id" {
     description = "ID of the Cognito User Pool Client"
     type = string
 }
-
-variable "peakcore_validation_arn" {
-    description = "Name of the PeakCore Validation Lambda function" 
-    type = string 
-}
-
-variable "peakcore_read_arn" {
-    description = "Name of the PeakCore Read Lambda function"
-    type = string 
-} 
