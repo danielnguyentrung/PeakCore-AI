@@ -5,6 +5,8 @@ module "api_gateway" {
   peakcore_read_arn = module.lambda.peakcore_read_arn
   user_pool_id = module.cognito.user_pool_id
   user_pool_client_id = module.cognito.user_pool_client_id
+  peakcore_validation_arn = module.lambda.peakcore_validation_arn
+  peakcore_read_arn = module.lambda.peakcore_read_arn
 }
 
 # BEDROCK MODULE 
@@ -95,4 +97,5 @@ module "ses" {
 module "sqs" {
   source = "./services/sqs"
 }
+
 

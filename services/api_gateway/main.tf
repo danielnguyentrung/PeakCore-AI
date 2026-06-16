@@ -54,3 +54,21 @@ resource "aws_apigatewayv2_stage" "peakcore_stage" {
     name = "$default"
     auto_deploy = true
 }
+
+resource "aws_lambda_permission" "api_gateway_lambda_tp" {
+    statement_id = "AllowAPIGatewayInvoke"
+    action = "lambda:InvokeFunction"
+    function_name = var.peakcore_validation_arn
+    principal = "apigateway.amazonaws.com"
+    source_arn = "${aws_apigatewayv2_api.peakcore_gateway.execution_arn}/*/*"
+}
+
+
+resource "aws_lambda_permission" "api_gateway_lambda_read_tp" {
+    statement_id = "AllowAPIGatewayInvoke"
+    action = "lambda:InvokeFunction"
+    function_name = var.peakcore_read_arn
+    principal = "apigateway.amazonaws.com"
+    source_arn = "${aws_apigatewayv2_api.peakcore_gateway.execution_arn}/*/*"
+}
+

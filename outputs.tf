@@ -17,3 +17,4 @@ output "user_pool_client_id" {
     description = "ID of the Cognito User Pool Client"
     value = module.cognito.user_pool_client_id
 }
+
