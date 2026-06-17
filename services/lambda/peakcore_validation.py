@@ -65,7 +65,7 @@ def conditional_validation(body):
     if body["event_training"] == True and ("event_name" not in body or body["event_name"] == "" or body["event_name"] is None):
         return {"statusCode": 400, "body": json.dumps({"error": "event_name cannot be empty"})}
     
-    if body["environment"] == "Home gym":
+    if body["environment"] == "Home Gym":
         if "home_gym_equipment" not in body: 
             return{"statusCode": 400, "body": json.dumps({"error": "home_gym_equipment is required"})}
         if not isinstance(body["home_gym_equipment"], list):

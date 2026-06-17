@@ -28,7 +28,8 @@ resource "aws_lambda_function" "peakcore_validation" {
   function_name = "peakcore-validation"
   runtime       = "python3.12"
   handler       = "peakcore_validation.lambda_handler"
-  role          =  var.lambda_execution_role_arn 
+  role          =  var.lambda_execution_role_arn
+  timeout       =  10
 
   filename         = data.archive_file.validation_zip.output_path
   source_code_hash = data.archive_file.validation_zip.output_base64sha256
@@ -46,6 +47,7 @@ resource "aws_lambda_function" "peakcore_read" {
   runtime       = "python3.12"
   handler       = "peakcore_read.lambda_handler"
   role          =  var.lambda_execution_role_arn
+  timeout       =  10
 
   filename = data.archive_file.read_zip.output_path
   source_code_hash = data.archive_file.read_zip.output_base64sha256
@@ -62,6 +64,7 @@ resource "aws_lambda_function" "peakcore_core" {
   runtime       = "python3.12"
   handler       = "peakcore_core.lambda_handler"
   role          =  var.lambda_execution_role_arn
+  timeout       =  300
 
   filename         = data.archive_file.core_zip.output_path
   source_code_hash = data.archive_file.core_zip.output_base64sha256
@@ -86,6 +89,7 @@ resource "aws_lambda_function" "peakcore_check" {
   runtime       = "python3.12"
   handler       = "peakcore_check.lambda_handler"
   role          =  var.lambda_execution_role_arn
+  timeout       =  10
 
   filename         = data.archive_file.notification_zip.output_path
   source_code_hash = data.archive_file.notification_zip.output_base64sha256

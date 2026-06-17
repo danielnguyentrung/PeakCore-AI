@@ -3,12 +3,21 @@ import boto3
 import os
 import logging
 from datetime import datetime, timezone
+from botocore.config import Config 
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 dynamodb = boto3.resource("dynamodb")
-bedrock = boto3.client("bedrock-runtime")
+bedrock = boto3.client(
+    "bedrock-runtime",
+    config=Config(
+        read_timeout=60,
+        connect_timeout=5,
+        retries={'max_attempts': 1}
+    )
+)
+
 ses = boto3.client("ses")
 
 DYNAMODB_TABLE_NAME = os.environ["DYNAMODB_TABLE_NAME"]

@@ -37,7 +37,7 @@ data "aws_iam_policy_document" "bedrock_policy_doc" {
   statement {
     effect = "Allow"
 
-    actions = ["bedrock:InvokeModel"]
+    actions = ["bedrock:InvokeModel", "bedrock:Converse"]
     resources = ["*"]
   }
 }
@@ -134,7 +134,6 @@ data "aws_iam_policy_document" "s3_policy_doc" {
     resources = ["${var.s3_frontend_arn}/*"]
   }
 }
-
 
 # S3 policy 
 
