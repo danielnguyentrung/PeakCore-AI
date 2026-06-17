@@ -4,16 +4,111 @@ import { useAuthenticator } from '@aws-amplify/ui-react'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import { API_URL } from '../aws-exports'
 
+const clean = (s) => s?.replace(/\*\*/g, '').replace(/\*/g, '').trim() ?? ''
+
+const DAY_PATTERN = /^(day\s*\d+|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i
+
+const parsePlan = (text) => {
+  if (!text) return { days: [], motivation: '' }
+  const lines = text.split('\n').map(l => l.trim())
+  const days = []
+  let day = null, block = null, exercise = null
+  let motivation = '', inMotivation = false
+
+  const commitExercise = () => { if (exercise && block) { block.exercises.push(exercise); exercise = null } }
+  const commitBlock = () => { commitExercise(); if (block && day) { day.blocks.push(block); block = null } }
+  const commitDay = () => { commitBlock(); if (day) { days.push(day); day = null } }
+
+  for (const line of lines) {
+    if (!line || line === '---' || /^[|\-]{3,}$/.test(line)) continue
+
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/)
+    if (headingMatch) {
+      const level = headingMatch[1].length
+      const title = clean(headingMatch[2])
+
+      inMotivation = /motivat/i.test(title)
+
+      if (DAY_PATTERN.test(title)) {
+        inMotivation = false
+        commitDay()
+        day = { title, meta: [], blocks: [] }
+        block = null; exercise = null
+      } else if (level >= 3 && day) {
+        inMotivation = false
+        commitBlock()
+        block = { title, exercises: [] }
+      }
+      continue
+    }
+
+    if (inMotivation) {
+      motivation += (motivation ? ' ' : '') + clean(line)
+      continue
+    }
+
+    const numbered = line.match(/^(\d+)\.\s+(.+)$/)
+    if (numbered && day) {
+      if (!block) {
+        block = { title: '', exercises: [] }
+        day.blocks.push(block)
+      }
+      commitExercise()
+      exercise = { num: numbered[1], name: clean(numbered[2]), detailLine: null, note: null }
+      continue
+    }
+
+    if (/^(\*?(form\s*note|form\s*tip|coaching\s*note|note|tip))/i.test(line) && exercise) {
+      exercise.note = clean(line.replace(/^\*?(form\s*notes?|form\s*tip|coaching\s*note|note|tip)\*?:?\s*/i, ''))
+      continue
+    }
+
+    if ((/sets?[\s:|]/i.test(line) || /reps?[\s:|]/i.test(line)) && exercise) {
+      exercise.detailLine = clean(line)
+      continue
+    }
+
+    const kv = line.match(/^([A-Za-z][^:#|]{1,28}):\s+(.+)$/)
+    if (kv && day && day.blocks.length === 0 && !block) {
+      day.meta.push({ key: clean(kv[1]), value: clean(kv[2]) })
+      continue
+    }
+
+    // Catch-all: any remaining text within a workout context gets attached as a note
+    const text = clean(line)
+    if (text && day) {
+      if (exercise) {
+        if (!exercise.note) exercise.note = text
+      } else if (block) {
+        if (!block.note) block.note = text
+      }
+    }
+  }
+
+  commitDay()
+  return { days, motivation }
+}
+
+const parseChips = (detail) => {
+  if (!detail) return []
+  const chips = []
+  const sets = detail.match(/sets?[\s:]+(\d+)/i) || detail.match(/^(\d+)\s*[x×]/i)
+  const reps = detail.match(/reps?[\s:]+([0-9\-–]+)/i) || detail.match(/[x×]\s*([0-9\-–]+)/i)
+  const rest = detail.match(/rest[\s:]+([^|,\n]+)/i)
+  if (sets) chips.push({ label: sets[1] + ' sets', color: 'cyan' })
+  if (reps) chips.push({ label: reps[1] + ' reps', color: 'violet' })
+  if (rest) chips.push({ label: rest[1].trim().replace(/minutes?/i, 'min').replace(/seconds?/i, 's'), color: 'amber' })
+  return chips
+}
+
 export default function WorkoutPlan() {
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const { user, signOut } = useAuthenticator((context) => [context.user])
+  const { user, signOut } = useAuthenticator((ctx) => [ctx.user])
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchPlan()
-  }, [])
+  useEffect(() => { fetchPlan() }, [])
 
   const fetchPlan = async () => {
     setLoading(true)
@@ -21,18 +116,9 @@ export default function WorkoutPlan() {
     try {
       const session = await fetchAuthSession()
       const token = session.tokens.idToken.toString()
-
-      const res = await fetch(`${API_URL}/plan`, {
-        headers: { 'Authorization': token },
-      })
-
-      if (res.status === 404) {
-        setPlan(null)
-        return
-      }
-
+      const res = await fetch(`${API_URL}/plan`, { headers: { Authorization: token } })
+      if (res.status === 404) { setPlan(null); return }
       if (!res.ok) throw new Error('Failed to load workout plan')
-
       const data = await res.json()
       setPlan(data.workout_plan)
     } catch (err) {
@@ -42,37 +128,12 @@ export default function WorkoutPlan() {
     }
   }
 
-  // Parse the workout plan text into day sections
-  const parsePlan = (text) => {
-    if (!text) return []
-    const lines = text.split('\n').filter(l => l.trim())
-    const sections = []
-    let current = null
-
-    for (const line of lines) {
-      const isDayHeader = /^(day\s*\d+|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i.test(line.trim())
-
-      if (isDayHeader) {
-        if (current) sections.push(current)
-        current = { title: line.trim(), content: [] }
-      } else if (current) {
-        current.content.push(line.trim())
-      } else {
-        if (!sections.length) sections.push({ title: 'Overview', content: [] })
-        sections[0].content.push(line.trim())
-      }
-    }
-
-    if (current) sections.push(current)
-    return sections
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin mb-4" />
-          <p className="text-gray-400 text-sm">Loading your workout plan...</p>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin mb-4" />
+          <p className="text-gray-500 text-sm tracking-wide">Loading your plan...</p>
         </div>
       </div>
     )
@@ -80,21 +141,18 @@ export default function WorkoutPlan() {
 
   if (!plan && !error) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#141414] border border-[#1e1e1e] mb-6">
-            <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-2xl bg-[#111] border border-[#1e1e1e] flex items-center justify-center mx-auto mb-5">
+            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">No Plan Yet</h2>
-          <p className="text-gray-400 mb-8 text-sm">
-            You haven't generated a workout plan yet. Fill out the questionnaire to get your personalized AI plan.
-          </p>
-          <button
-            onClick={() => navigate('/questionnaire')}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/20">
+          <h2 className="text-xl font-bold text-white mb-2">No Plan Yet</h2>
+          <p className="text-gray-500 text-sm mb-6">Fill out the questionnaire to get your AI-generated plan.</p>
+          <button onClick={() => navigate('/questionnaire')}
+            className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm rounded-xl transition-colors">
             Create My Plan
           </button>
         </div>
@@ -102,85 +160,75 @@ export default function WorkoutPlan() {
     )
   }
 
-  const sections = parsePlan(plan)
+  const { days, motivation } = parsePlan(plan)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] px-4 py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[#080808]">
+      <div className="max-w-2xl mx-auto px-4 py-8">
 
-        {/* Header */}
+        {/* Nav */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-400 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500 flex items-center justify-center">
+              <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-white font-bold text-lg">PeakCore AI</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/questionnaire')}
-              className="text-xs text-gray-500 hover:text-cyan-400 transition-colors border border-[#1e1e1e] hover:border-cyan-500/50 px-3 py-1.5 rounded-lg">
+            <span className="text-white font-bold text-sm tracking-tight">PeakCore AI</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/questionnaire')}
+              className="text-xs text-gray-500 hover:text-white transition-colors border border-[#222] hover:border-[#333] px-3 py-1.5 rounded-lg">
               Regenerate
             </button>
-            <button onClick={signOut} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            <button onClick={signOut} className="text-xs text-gray-600 hover:text-gray-400 transition-colors px-2 py-1.5">
               Sign out
             </button>
           </div>
         </div>
 
-        {/* Hero section */}
-        <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-400/10 border border-cyan-500/20 rounded-2xl p-6 mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-            <span className="text-cyan-400 text-xs font-semibold uppercase tracking-widest">AI Generated</span>
+        {/* Hero */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              AI Generated
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Your Personal <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300">Workout Plan</span>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            Your Workout <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Plan</span>
           </h1>
-          <p className="text-gray-400 text-sm mt-2">
-            Personalized for {user?.signInDetails?.loginId}
-          </p>
-
-          <div className="flex gap-4 mt-4">
-            <Stat icon="🔥" label="Personalized" />
-            <Stat icon="⚡" label="AI Powered" />
-            <Stat icon="🎯" label="Goal Focused" />
-          </div>
         </div>
 
-        {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-cyan-400/10 border border-cyan-400/20 rounded-xl">
-            <p className="text-cyan-300 text-sm">{error}</p>
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Plan sections */}
-        {sections.length > 0 ? (
-          <div className="space-y-4">
-            {sections.map((section, i) => (
-              <DayCard key={i} section={section} index={i} />
-            ))}
-          </div>
-        ) : (
-          // Fallback — display raw text if parsing finds no day sections
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
-            <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-              {plan}
-            </pre>
+        {/* Motivational message */}
+        {motivation && (
+          <div className="mb-5 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 border border-cyan-500/15 rounded-2xl px-5 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan-500 mb-2">Your Coach Says</p>
+            <p className="text-gray-300 text-sm leading-relaxed">{motivation}</p>
           </div>
         )}
 
-        {/* Refresh button */}
+        {/* Days */}
+        <div className="space-y-3">
+          {days.length > 0 ? days.map((day, i) => (
+            <DayCard key={i} day={day} index={i} />
+          )) : (
+            <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl p-5">
+              <pre className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                {plan.replace(/^#{1,6}\s+/gm, '').replace(/\*\*/g, '').replace(/\*/g, '')}
+              </pre>
+            </div>
+          )}
+        </div>
+
         <div className="mt-8 text-center">
-          <button onClick={fetchPlan}
-            className="text-gray-600 hover:text-gray-400 text-xs transition-colors flex items-center gap-2 mx-auto">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+          <button onClick={fetchPlan} className="text-gray-600 hover:text-gray-400 text-xs transition-colors">
             Refresh plan
           </button>
         </div>
@@ -190,46 +238,57 @@ export default function WorkoutPlan() {
   )
 }
 
-function DayCard({ section, index }) {
-  const [open, setOpen] = useState(index < 3)
+const DAY_ACCENTS = [
+  { border: 'border-l-cyan-500', badge: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+  { border: 'border-l-violet-500', badge: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
+  { border: 'border-l-amber-500', badge: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  { border: 'border-l-emerald-500', badge: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  { border: 'border-l-rose-500', badge: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
+  { border: 'border-l-blue-500', badge: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  { border: 'border-l-orange-500', badge: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
+]
 
-  const dayColors = [
-    'from-cyan-500/20 to-cyan-500/5 border-cyan-500/30 text-cyan-400',
-    'from-cyan-400/20 to-cyan-400/5 border-cyan-400/30 text-cyan-300',
-    'from-amber-500/20 to-amber-500/5 border-amber-500/30 text-amber-400',
-    'from-cyan-600/20 to-cyan-600/5 border-cyan-600/30 text-cyan-500',
-    'from-cyan-600/20 to-cyan-600/5 border-cyan-600/30 text-cyan-400',
-    'from-rose-500/20 to-rose-500/5 border-rose-500/30 text-rose-400',
-    'from-cyan-400/20 to-cyan-400/5 border-cyan-400/30 text-cyan-300',
-  ]
+function DayCard({ day, index }) {
+  const [open, setOpen] = useState(index < 2)
+  const accent = DAY_ACCENTS[index % DAY_ACCENTS.length]
 
-  const colorClass = dayColors[index % dayColors.length]
+  const dayLabel = day.title.match(/^(day\s*\d+|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i)?.[0] ?? ''
+  const subtitle = day.title.replace(/^(day\s*\d+[:\-–]?\s*|monday|tuesday|wednesday|thursday|friday|saturday|sunday[:\-–]?\s*)/i, '').trim()
 
   return (
-    <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className={`w-full p-5 flex items-center justify-between bg-gradient-to-r ${colorClass} border-b border-[#1e1e1e] transition-all`}>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold uppercase tracking-widest opacity-60">
-            {section.title.match(/day\s*\d+/i) ? section.title.match(/day\s*\d+/i)[0] : `#${index + 1}`}
-          </span>
-          <h3 className="font-bold text-white text-sm sm:text-base">
-            {section.title.replace(/^day\s*\d+[:\-–]?\s*/i, '').trim() || section.title}
-          </h3>
+    <div className={`bg-[#111] border border-[#1a1a1a] rounded-2xl overflow-hidden border-l-2 ${accent.border}`}>
+      <button onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/[0.015] transition-colors text-left">
+        <div className="flex items-center gap-3 min-w-0">
+          {dayLabel && (
+            <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-0.5 rounded-md flex-shrink-0 ${accent.badge}`}>
+              {dayLabel}
+            </span>
+          )}
+          {subtitle && <span className="text-white text-sm font-semibold truncate">{subtitle}</span>}
+          {!dayLabel && !subtitle && <span className="text-white text-sm font-semibold">{day.title}</span>}
         </div>
-        <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        <svg className={`w-4 h-4 text-gray-600 flex-shrink-0 ml-2 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
-        <div className="p-5">
-          <div className="space-y-2">
-            {section.content.map((line, i) => (
-              <PlanLine key={i} line={line} />
+        <div className="border-t border-[#1a1a1a]">
+          {day.meta.length > 0 && (
+            <div className="px-5 py-3 flex flex-wrap gap-3 border-b border-[#161616]">
+              {day.meta.map((m, i) => (
+                <div key={i} className="text-xs">
+                  <span className="text-gray-600">{m.key}: </span>
+                  <span className="text-gray-300">{m.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="px-5 py-4 space-y-5">
+            {day.blocks.map((block, i) => (
+              <WorkoutBlock key={i} block={block} />
             ))}
           </div>
         </div>
@@ -238,31 +297,56 @@ function DayCard({ section, index }) {
   )
 }
 
-function PlanLine({ line }) {
-  const isExercise = /^\d+[\.\)]|^[-•*]|sets|reps|rest/i.test(line)
-  const isHeader = /^[A-Z][A-Z\s]+:?$/.test(line) || line.endsWith(':')
-
-  if (isHeader) {
-    return <p className="text-cyan-400 font-semibold text-xs uppercase tracking-wider mt-4 mb-2">{line}</p>
-  }
-
-  if (isExercise) {
-    return (
-      <div className="flex gap-3 py-2 border-b border-[#1e1e1e] last:border-0">
-        <span className="text-cyan-500 mt-0.5 flex-shrink-0">▸</span>
-        <p className="text-gray-300 text-sm leading-relaxed">{line}</p>
+function WorkoutBlock({ block }) {
+  return (
+    <div>
+      {block.title && <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-3">{block.title}</p>}
+      {block.note && <p className="text-gray-400 text-xs italic mb-3 leading-relaxed">{block.note}</p>}
+      <div className="space-y-2">
+        {block.exercises.map((ex, i) => (
+          <ExerciseCard key={i} exercise={ex} />
+        ))}
       </div>
-    )
-  }
-
-  return <p className="text-gray-400 text-sm leading-relaxed">{line}</p>
+    </div>
+  )
 }
 
-function Stat({ icon, label }) {
+function ExerciseCard({ exercise }) {
+  const chips = parseChips(exercise.detailLine)
+
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-sm">{icon}</span>
-      <span className="text-gray-400 text-xs">{label}</span>
+    <div className="bg-[#0e0e0e] border border-[#1a1a1a] rounded-xl px-4 py-3">
+      <div className="flex items-start gap-3">
+        <span className="text-[11px] font-mono text-gray-600 pt-0.5 w-5 flex-shrink-0">{exercise.num}.</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-semibold leading-snug">{exercise.name}</p>
+          {chips.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {chips.map((chip, i) => (
+                <Chip key={i} label={chip.label} color={chip.color} />
+              ))}
+            </div>
+          )}
+          {exercise.note && (
+            <p className="text-[12px] text-gray-500 italic mt-2 leading-relaxed">{exercise.note}</p>
+          )}
+        </div>
+      </div>
     </div>
+  )
+}
+
+const CHIP_STYLES = {
+  cyan: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+  violet: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  gray: 'text-gray-400 bg-gray-500/10 border-gray-500/20',
+}
+
+function Chip({ label, color }) {
+  return (
+    <span className={`text-[11px] font-semibold border px-2 py-0.5 rounded-full ${CHIP_STYLES[color] ?? CHIP_STYLES.gray}`}>
+      {label}
+    </span>
   )
 }

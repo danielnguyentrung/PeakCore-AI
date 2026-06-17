@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuthenticator } from '@aws-amplify/ui-react'
 import Navbar from '../components/Navbar'
 
 function GlitchText({ text, className }) {
@@ -34,6 +35,7 @@ function GlitchText({ text, className }) {
 export default function Landing() {
   const [visible, setVisible] = useState(false)
   const navigate = useNavigate()
+  const { user } = useAuthenticator((ctx) => [ctx.user])
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 100)
@@ -109,11 +111,13 @@ export default function Landing() {
             </span>
           </button>
 
-          <button
-            onClick={() => navigate('/login')}
-            className="px-8 py-4 border border-[#1e1e1e] text-gray-400 font-medium rounded-2xl text-base hover:border-gray-500 hover:text-gray-200 transition-all">
-            Sign In
-          </button>
+          {!user && (
+            <button
+              onClick={() => navigate('/login')}
+              className="px-8 py-4 border border-[#1e1e1e] text-gray-400 font-medium rounded-2xl text-base hover:border-gray-500 hover:text-gray-200 transition-all">
+              Sign In
+            </button>
+          )}
         </div>
       </div>
 

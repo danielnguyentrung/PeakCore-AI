@@ -78,6 +78,39 @@ body {
   color: #ffffff !important;
 }
 
+/* Fix "We Emailed You" and other auth headings */
+[data-amplify-authenticator] h3,
+[data-amplify-authenticator] [data-amplify-heading],
+[data-amplify-authenticator] .amplify-heading {
+  color: #ffffff !important;
+}
+
+/* Fix resend code outlined/default button */
+[data-amplify-authenticator] .amplify-button:not(.amplify-button--primary):not(.amplify-button--link) {
+  color: #22d3ee !important;
+  border-color: #22d3ee !important;
+  background-color: transparent !important;
+}
+
+[data-amplify-authenticator] .amplify-button:not(.amplify-button--primary):not(.amplify-button--link):hover {
+  color: #67e8f9 !important;
+  border-color: #67e8f9 !important;
+  background-color: rgba(34, 211, 238, 0.08) !important;
+}
+
+/* Fix resend code and other link-style buttons */
+[data-amplify-authenticator] .amplify-button--link,
+[data-amplify-authenticator] button[data-variation="link"] {
+  color: #22d3ee !important;
+  background-color: transparent !important;
+}
+
+[data-amplify-authenticator] .amplify-button--link:hover,
+[data-amplify-authenticator] button[data-variation="link"]:hover {
+  color: #67e8f9 !important;
+  background-color: rgba(34, 211, 238, 0.08) !important;
+}
+
 /* Make password show/hide eye icon visible */
 [data-amplify-authenticator] button[aria-label*="password"],
 [data-amplify-authenticator] button[aria-label*="Password"] {

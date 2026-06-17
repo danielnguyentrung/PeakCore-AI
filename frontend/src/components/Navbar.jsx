@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthenticator } from '@aws-amplify/ui-react'
+import { fetchUserAttributes } from 'aws-amplify/auth'
 
 const links = [
   { label: 'How It Works', path: '/how-it-works' },
@@ -18,7 +19,20 @@ export default function Navbar() {
   const { user, signOut } = useAuthenticator((context) => [context.user])
 
   const email = user?.signInDetails?.loginId || ''
-  const displayName = email.split('@')[0]
+  const [displayName, setDisplayName] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    fetchUserAttributes()
+      .then(attrs => {
+        const name = attrs.given_name || email.split('@')[0].split('.')[0]
+        setDisplayName(name.charAt(0).toUpperCase() + name.slice(1))
+      })
+      .catch(() => {
+        const fallback = email.split('@')[0].split('.')[0]
+        setDisplayName(fallback.charAt(0).toUpperCase() + fallback.slice(1))
+      })
+  }, [user, email])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -65,15 +79,20 @@ export default function Navbar() {
         {/* CTA / User menu */}
         <div className="hidden md:flex items-center gap-3">
           {user ? (
-            <div className="relative" ref={dropdownRef}>
+            <>
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+                onClick={() => navigate('/questionnaire')}
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/20">
+                Regenerate Plan
+              </button>
+            <div className="relative" ref={dropdownRef} onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
+              <button
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[#1e1e1e] hover:border-cyan-500/50 transition-all group">
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
                   {displayName[0]?.toUpperCase()}
                 </div>
                 <span className="text-gray-300 text-sm font-medium group-hover:text-white transition-colors">
-                  {displayName}
+                  Hello, {displayName}
                 </span>
                 <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,6 +116,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            </>
           ) : (
             <>
               <button
