@@ -29,7 +29,7 @@ export default function Login() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (user) navigate('/questionnaire')
+    if (user) navigate('/')
   }, [user, navigate])
 
   return (

@@ -80,7 +80,7 @@ export default function Questionnaire() {
         ...form,
         age: parseInt(form.age),
         weight: parseInt(form.weight),
-        height: parseInt(form.height),
+        height: parseFloat(form.height),
         work_hours: parseInt(form.work_hours),
         workout_duration: parseInt(form.workout_duration),
       }

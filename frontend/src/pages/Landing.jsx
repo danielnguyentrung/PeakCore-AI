@@ -101,7 +101,7 @@ export default function Landing() {
         {/* CTA buttons */}
         <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 delay-1000 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate(user ? '/questionnaire' : '/login')}
             className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white font-bold rounded-2xl text-base hover:opacity-90 transition-all shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-105 active:scale-95">
             <span className="relative z-10 flex items-center gap-2">
               Get Started Free

@@ -14,6 +14,7 @@ const parsePlan = (text) => {
   const days = []
   let day = null, block = null, exercise = null
   let motivation = '', inMotivation = false
+  let inProgramNotes = false, programNotes = [], currentNote = null
 
   const commitExercise = () => { if (exercise && block) { block.exercises.push(exercise); exercise = null } }
   const commitBlock = () => { commitExercise(); if (block && day) { day.blocks.push(block); block = null } }
@@ -28,12 +29,17 @@ const parsePlan = (text) => {
       const title = clean(headingMatch[2])
 
       inMotivation = /motivat/i.test(title)
+      inProgramNotes = /program\s*notes?|progression/i.test(title)
 
       if (DAY_PATTERN.test(title)) {
         inMotivation = false
+        inProgramNotes = false
+        currentNote = null
         commitDay()
         day = { title, meta: [], blocks: [] }
         block = null; exercise = null
+      } else if (inProgramNotes) {
+        currentNote = null
       } else if (level >= 3 && day) {
         inMotivation = false
         commitBlock()
@@ -44,6 +50,20 @@ const parsePlan = (text) => {
 
     if (inMotivation) {
       motivation += (motivation ? ' ' : '') + clean(line)
+      continue
+    }
+
+    if (inProgramNotes) {
+      const boldHeader = line.match(/^\*\*(.+?)\*\*:?\s*$/)
+      if (boldHeader) {
+        currentNote = { title: clean(boldHeader[1]).replace(/:$/, ''), bullets: [] }
+        programNotes.push(currentNote)
+        continue
+      }
+      const bullet = line.match(/^[-*]\s+(.+)$/)
+      if (bullet && currentNote) {
+        currentNote.bullets.push(clean(bullet[1]))
+      }
       continue
     }
 
@@ -74,6 +94,14 @@ const parsePlan = (text) => {
       continue
     }
 
+    // Bullet points (rest days, recommendation sections)
+    const bullet = line.match(/^[-*]\s+(.+)$/)
+    if (bullet && day && !exercise) {
+      if (!day.notes) day.notes = []
+      day.notes.push(clean(bullet[1]))
+      continue
+    }
+
     // Catch-all: any remaining text within a workout context gets attached as a note
     const text = clean(line)
     if (text && day) {
@@ -81,12 +109,15 @@ const parsePlan = (text) => {
         if (!exercise.note) exercise.note = text
       } else if (block) {
         if (!block.note) block.note = text
+      } else if (!line.startsWith('|')) {
+        if (!day.notes) day.notes = []
+        day.notes.push(text)
       }
     }
   }
 
   commitDay()
-  return { days, motivation }
+  return { days, motivation, programNotes }
 }
 
 const parseChips = (detail) => {
@@ -105,7 +136,7 @@ export default function WorkoutPlan() {
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const { user, signOut } = useAuthenticator((ctx) => [ctx.user])
+  const { signOut } = useAuthenticator((ctx) => [ctx.user])
   const navigate = useNavigate()
 
   useEffect(() => { fetchPlan() }, [])
@@ -139,28 +170,58 @@ export default function WorkoutPlan() {
     )
   }
 
-  if (!plan && !error) {
+  if (!plan) {
     return (
       <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-[#111] border border-[#1e1e1e] flex items-center justify-center mx-auto mb-5">
-            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-md w-full text-center">
+
+          {/* Icon */}
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-400/5 border border-cyan-500/20 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">No Plan Yet</h2>
-          <p className="text-gray-500 text-sm mb-6">Fill out the questionnaire to get your AI-generated plan.</p>
+
+          <h2 className="text-2xl font-extrabold text-white mb-3 tracking-tight">No Workout Plan Yet</h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-8">
+            You haven't generated a plan yet. Complete the questionnaire and our AI will build a fully personalized workout plan based on your goals, fitness level, and schedule.
+          </p>
+
+          {/* Steps */}
+          <div className="bg-[#111] border border-[#1a1a1a] rounded-2xl p-5 mb-8 text-left space-y-4">
+            {[
+              { step: '1', label: 'Fill out the questionnaire', desc: 'Tell us about your goals, experience, and schedule' },
+              { step: '2', label: 'AI generates your plan', desc: 'Claude builds a personalized weekly workout program' },
+              { step: '3', label: 'Start training', desc: 'Follow your plan and track your progress' },
+            ].map(({ step, label, desc }) => (
+              <div key={step} className="flex items-start gap-4">
+                <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-cyan-400 text-xs font-bold">{step}</span>
+                </div>
+                <div>
+                  <p className="text-white text-sm font-semibold">{label}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <button onClick={() => navigate('/questionnaire')}
-            className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm rounded-xl transition-colors">
-            Create My Plan
+            className="w-full py-3 bg-gradient-to-r from-cyan-500 to-cyan-400 text-black font-bold text-sm rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/20">
+            Get My Workout Plan
           </button>
+          <button onClick={() => navigate('/')}
+            className="mt-3 w-full py-3 text-gray-500 hover:text-gray-300 text-sm transition-colors">
+            Back to Home
+          </button>
+
         </div>
       </div>
     )
   }
 
-  const { days, motivation } = parsePlan(plan)
+  const { days, motivation, programNotes } = parsePlan(plan)
 
   return (
     <div className="min-h-screen bg-[#080808]">
@@ -221,11 +282,25 @@ export default function WorkoutPlan() {
           )) : (
             <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl p-5">
               <pre className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                {plan.replace(/^#{1,6}\s+/gm, '').replace(/\*\*/g, '').replace(/\*/g, '')}
+                {plan?.replace(/^#{1,6}\s+/gm, '').replace(/\*\*/g, '').replace(/\*/g, '')}
               </pre>
             </div>
           )}
         </div>
+
+        {programNotes && programNotes.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-600">Program Notes & Progression</p>
+              <div className="flex-1 h-px bg-[#1a1a1a]" />
+            </div>
+            <div className="space-y-3">
+              {programNotes.map((note, i) => (
+                <NoteCard key={i} note={note} />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 text-center">
           <button onClick={fetchPlan} className="text-gray-600 hover:text-gray-400 text-xs transition-colors">
@@ -286,11 +361,23 @@ function DayCard({ day, index }) {
               ))}
             </div>
           )}
-          <div className="px-5 py-4 space-y-5">
-            {day.blocks.map((block, i) => (
-              <WorkoutBlock key={i} block={block} />
-            ))}
-          </div>
+          {day.blocks.length > 0 && (
+            <div className="px-5 py-4 space-y-5">
+              {day.blocks.map((block, i) => (
+                <WorkoutBlock key={i} block={block} />
+              ))}
+            </div>
+          )}
+          {day.notes && day.notes.length > 0 && (
+            <div className="px-5 py-4 space-y-2">
+              {day.notes.map((note, i) => (
+                <div key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
+                  <span className="text-cyan-500 mt-0.5 flex-shrink-0">•</span>
+                  <span>{note}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -348,5 +435,21 @@ function Chip({ label, color }) {
     <span className={`text-[11px] font-semibold border px-2 py-0.5 rounded-full ${CHIP_STYLES[color] ?? CHIP_STYLES.gray}`}>
       {label}
     </span>
+  )
+}
+
+function NoteCard({ note }) {
+  return (
+    <div className="bg-[#111] border border-[#1a1a1a] rounded-2xl px-5 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan-500/80 mb-3">{note.title}</p>
+      <ul className="space-y-2">
+        {note.bullets.map((bullet, i) => (
+          <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
+            <span className="text-cyan-500 mt-0.5 flex-shrink-0">•</span>
+            <span>{bullet}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -37,7 +37,12 @@ data "aws_iam_policy_document" "bedrock_policy_doc" {
   statement {
     effect = "Allow"
 
-    actions = ["bedrock:InvokeModel", "bedrock:Converse"]
+    actions = [
+      "bedrock:InvokeModel", 
+      "bedrock:Converse",
+      "aws-marketplace:ViewSubscriptions",
+      "aws-marketplace:Subscribe"
+    ]
     resources = ["*"]
   }
 }

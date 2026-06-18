@@ -15,21 +15,46 @@ password_policy {
 
 account_recovery_setting {
   recovery_mechanism {
-    name = "verified_email"
+    name     = "verified_email"
     priority = 1
-        }
-    }
+  }
+}
+
+schema {
+  name                = "given_name"
+  attribute_data_type = "String"
+  required            = true
+  mutable             = true
+  string_attribute_constraints {
+    min_length = 1
+    max_length = 50
+  }
+}
+
+schema {
+  name                = "family_name"
+  attribute_data_type = "String"
+  required            = true
+  mutable             = true
+  string_attribute_constraints {
+    min_length = 1
+    max_length = 50
+  }
+}
 
 email_configuration {
-    email_sending_account = "COGNITO_DEFAULT"
-    }
+  email_sending_account = "COGNITO_DEFAULT"
+}
 }
 
 resource "aws_cognito_user_pool_client" "peakcore_client" {
     name = "peakcore-client"
     user_pool_id = aws_cognito_user_pool.peakcore_user_pool.id
 
-    generate_secret = false 
+    generate_secret = false
+
+    read_attributes  = ["email", "given_name", "family_name"]
+    write_attributes = ["email", "given_name", "family_name"]
 
     explicit_auth_flows = [
         "ALLOW_USER_PASSWORD_AUTH",

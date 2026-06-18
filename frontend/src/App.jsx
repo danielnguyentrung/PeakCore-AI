@@ -24,8 +24,9 @@ export default function App() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
-      <Route path="/questionnaire" element={<Questionnaire />} />
-      <Route path="/workout" element={<WorkoutPlan />} />
+      <Route path="/questionnaire" element={<ProtectedRoute><Questionnaire /></ProtectedRoute>} />
+      <Route path="/workout" element={<ProtectedRoute><WorkoutPlan /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

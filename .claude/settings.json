@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(aws cloudfront list-distributions --query \"DistributionList.Items[].{ID:Id,Domain:DomainName}\" --output table)"
+    ]
+  }
+}

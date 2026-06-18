@@ -74,6 +74,7 @@ resource "aws_lambda_function" "peakcore_core" {
       DYNAMODB_TABLE_NAME = var.dynamodb_table_name
       BEDROCK_MODEL_ID = var.bedrock_model_id
       SES_SENDER_EMAIL = var.ses_sender_email
+      APP_URL          = var.app_url
       }
     }
   }

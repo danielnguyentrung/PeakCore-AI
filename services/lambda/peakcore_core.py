@@ -22,6 +22,7 @@ ses = boto3.client("ses")
 
 DYNAMODB_TABLE_NAME = os.environ["DYNAMODB_TABLE_NAME"]
 BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
+APP_URL = os.environ["APP_URL"]
 SES_SENDER_EMAIL = os.environ["SES_SENDER_EMAIL"]
 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
@@ -151,14 +152,14 @@ def db_store(user_id, email, profile, workout_plan):
     return
 
 
-def send_email(email, workout_plan):
+def send_email(email, message):
     ses.send_email(
         Source=SES_SENDER_EMAIL, 
         Destination={"ToAddresses": [email]},
         Message={
             "Subject": {"Data": "Your AI Gym trainer has created a Workout Plan for you!"},
             "Body": {
-                "Text": {"Data": workout_plan}
+                "Text": {"Data": message}
                 }
             }
         )
@@ -174,11 +175,27 @@ def lambda_handler(event, context):
         user_id = body["user_id"]
         email = body["email"]
         profile = body["profile"]
+        first_name = profile["first_name"]
 
         workout_plan = workout_generator(profile)
 
+        message = f""" 
+        Hey {first_name}, 
+
+        Your personalized workout plan is ready. 
+
+        Our AI has built a plan tailored specifically to your goals, fitness level, and schedule. No guess work. Just results!
+
+        View your plan here:
+        {APP_URL}/workout
+
+        Stay consistent, trust the process and let's get to work
+
+        — The PeakCore AI Team
+        """
+
         db_store(user_id, email, profile, workout_plan)
-        send_email(email, workout_plan)
+        send_email(email, message)
         logger.info(f"Successfully processed workout plan for {user_id}")
 
 

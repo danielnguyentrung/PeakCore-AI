@@ -14,6 +14,16 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const closeTimer = useRef(null)
+
+  const openDropdown = () => {
+    clearTimeout(closeTimer.current)
+    setDropdownOpen(true)
+  }
+
+  const closeDropdown = () => {
+    closeTimer.current = setTimeout(() => setDropdownOpen(false), 150)
+  }
   const navigate = useNavigate()
   const location = useLocation()
   const { user, signOut } = useAuthenticator((context) => [context.user])
@@ -85,7 +95,7 @@ export default function Navbar() {
                 className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/20">
                 Regenerate Plan
               </button>
-            <div className="relative" ref={dropdownRef} onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
+            <div className="relative" ref={dropdownRef} onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
               <button
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[#1e1e1e] hover:border-cyan-500/50 transition-all group">
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
@@ -111,7 +121,7 @@ export default function Navbar() {
                     <DropdownItem icon="📋" label="Questionnaire" onClick={() => { navigate('/questionnaire'); setDropdownOpen(false) }} />
                   </div>
                   <div className="border-t border-[#1e1e1e] py-1">
-                    <DropdownItem icon="🚪" label="Sign Out" onClick={() => { signOut(); navigate('/login') }} danger />
+                    <DropdownItem icon="🚪" label="Sign Out" onClick={() => { signOut(); navigate('/') }} danger />
                   </div>
                 </div>
               )}
@@ -171,7 +181,7 @@ export default function Navbar() {
                   className="w-full py-2.5 border border-[#1e1e1e] text-gray-400 rounded-xl text-sm font-medium hover:border-gray-500 hover:text-white transition-all">
                   My Workout Plan
                 </button>
-                <button onClick={() => { signOut(); navigate('/login') }}
+                <button onClick={() => { signOut(); navigate('/') }}
                   className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
                   Sign Out
                 </button>
