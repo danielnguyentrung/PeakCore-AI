@@ -15,6 +15,7 @@ const parsePlan = (text) => {
   let day = null, block = null, exercise = null
   let motivation = '', inMotivation = false
   let inProgramNotes = false, programNotes = [], currentNote = null
+  let tableHeaders = null
 
   const commitExercise = () => { if (exercise && block) { block.exercises.push(exercise); exercise = null } }
   const commitBlock = () => { commitExercise(); if (block && day) { day.blocks.push(block); block = null } }
@@ -27,6 +28,7 @@ const parsePlan = (text) => {
     if (headingMatch) {
       const level = headingMatch[1].length
       const title = clean(headingMatch[2])
+      tableHeaders = null
 
       inMotivation = /motivat/i.test(title)
       inProgramNotes = /program\s*notes?|progression/i.test(title)
@@ -91,6 +93,36 @@ const parsePlan = (text) => {
     const kv = line.match(/^([A-Za-z][^:#|]{1,28}):\s+(.+)$/)
     if (kv && day && day.blocks.length === 0 && !block) {
       day.meta.push({ key: clean(kv[1]), value: clean(kv[2]) })
+      continue
+    }
+
+    // Table header row — capture column order
+    if (line.startsWith('|') && /exercise|movement|sets?|reps?|rest/i.test(line)) {
+      tableHeaders = line.split('|').map(c => clean(c).toLowerCase()).filter(Boolean)
+      continue
+    }
+
+    // Table data row — exercises in table format
+    if (line.startsWith('|') && day && !inProgramNotes) {
+      const cells = line.split('|').map(c => c.trim()).filter(Boolean)
+      if (cells.length && !/^[-:]+$/.test(cells[0])) {
+        const name = clean(cells[0])
+        if (name) {
+          if (!block) block = { title: '', exercises: [] }
+          commitExercise()
+          const colLabels = tableHeaders ? tableHeaders.slice(1) : ['sets', 'reps', 'rest']
+          const parts = cells.slice(1).map((val, i) => {
+            if (!val || val === '-' || val === '—') return null
+            const hdr = colLabels[i] || ''
+            if (/sets?/i.test(hdr)) return `Sets: ${val}`
+            if (/reps?/i.test(hdr)) return `Reps: ${val}`
+            if (/rest/i.test(hdr)) return `Rest: ${val}`
+            return null
+          }).filter(Boolean)
+          exercise = { num: String(block.exercises.length + 1), name, detailLine: parts.join(' | ') || null, note: null }
+          commitExercise()
+        }
+      }
       continue
     }
 
@@ -295,9 +327,13 @@ export default function WorkoutPlan() {
               <div className="flex-1 h-px bg-[#1a1a1a]" />
             </div>
             <div className="space-y-3">
-              {programNotes.map((note, i) => (
-                <NoteCard key={i} note={note} />
-              ))}
+              {programNotes.map((note, i) => {
+                const isSignature = note.bullets.length === 0 && /^[-–]/.test(note.title)
+                if (isSignature) return null
+                const next = programNotes[i + 1]
+                const signature = (next && next.bullets.length === 0 && /^[-–]/.test(next.title)) ? next.title : null
+                return <NoteCard key={i} note={note} signature={signature} />
+              })}
             </div>
           </div>
         )}
@@ -324,24 +360,39 @@ const DAY_ACCENTS = [
 ]
 
 function DayCard({ day, index }) {
-  const [open, setOpen] = useState(index < 2)
+  const [open, setOpen] = useState(index === 0)
   const accent = DAY_ACCENTS[index % DAY_ACCENTS.length]
 
   const dayLabel = day.title.match(/^(day\s*\d+|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i)?.[0] ?? ''
   const subtitle = day.title.replace(/^(day\s*\d+[:\-–]?\s*|monday|tuesday|wednesday|thursday|friday|saturday|sunday[:\-–]?\s*)/i, '').trim()
 
+  const metaPreview = !open && day.meta.length > 0
+    ? day.meta.filter(m => /duration|target|focus/i.test(m.key)).slice(0, 2)
+    : []
+
   return (
     <div className={`bg-[#111] border border-[#1a1a1a] rounded-2xl overflow-hidden border-l-2 ${accent.border}`}>
       <button onClick={() => setOpen(!open)}
         className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/[0.015] transition-colors text-left">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {dayLabel && (
             <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-0.5 rounded-md flex-shrink-0 ${accent.badge}`}>
               {dayLabel}
             </span>
           )}
-          {subtitle && <span className="text-white text-sm font-semibold truncate">{subtitle}</span>}
-          {!dayLabel && !subtitle && <span className="text-white text-sm font-semibold">{day.title}</span>}
+          <div className="min-w-0">
+            {subtitle && <p className="text-white text-sm font-semibold truncate">{subtitle}</p>}
+            {!dayLabel && !subtitle && <p className="text-white text-sm font-semibold">{day.title}</p>}
+            {metaPreview.length > 0 && (
+              <div className="flex gap-3 mt-0.5">
+                {metaPreview.map((m, i) => (
+                  <span key={i} className="text-[11px] text-gray-600">
+                    {m.value}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <svg className={`w-4 h-4 text-gray-600 flex-shrink-0 ml-2 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -438,18 +489,38 @@ function Chip({ label, color }) {
   )
 }
 
-function NoteCard({ note }) {
+function NoteCard({ note, signature }) {
+  const isQuote = note.bullets.length === 0
+
   return (
     <div className="bg-[#111] border border-[#1a1a1a] rounded-2xl px-5 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan-500/80 mb-3">{note.title}</p>
-      <ul className="space-y-2">
-        {note.bullets.map((bullet, i) => (
-          <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
-            <span className="text-cyan-500 mt-0.5 flex-shrink-0">•</span>
-            <span>{bullet}</span>
-          </li>
-        ))}
-      </ul>
+      {isQuote ? (
+        <div>
+          <p className="text-sm text-gray-300 leading-relaxed italic">{note.title}</p>
+          {signature && (
+            <p className="text-right text-xs text-cyan-400/70 font-medium mt-3 pt-3 border-t border-[#1e1e1e]">
+              {signature}
+            </p>
+          )}
+        </div>
+      ) : (
+        <>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-cyan-500/80 mb-3">{note.title}</p>
+          <ul className="space-y-2">
+            {note.bullets.map((bullet, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
+                <span className="text-cyan-500 mt-0.5 flex-shrink-0">•</span>
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+          {signature && (
+            <p className="text-right text-xs text-cyan-400/70 font-medium mt-3 pt-3 border-t border-[#1e1e1e]">
+              {signature}
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }

@@ -411,8 +411,8 @@ export default function Questionnaire() {
 
           {/* Error */}
           {error && (
-            <div className="mt-4 p-3 bg-cyan-400/10 border border-cyan-400/20 rounded-xl">
-              <p className="text-cyan-300 text-sm">{error}</p>
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
 

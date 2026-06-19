@@ -62,6 +62,6 @@ resource "aws_ecs_service" "peakcore_staleness_service" {
     cluster = aws_ecs_cluster.peakcore_cluster.id
     task_definition = aws_ecs_task_definition.peakcore_task.arn
     launch_type = "FARGATE"
-    desired_count = 1
+    desired_count = 0
 }
 

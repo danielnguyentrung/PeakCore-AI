@@ -20,28 +20,6 @@ account_recovery_setting {
   }
 }
 
-schema {
-  name                = "given_name"
-  attribute_data_type = "String"
-  required            = true
-  mutable             = true
-  string_attribute_constraints {
-    min_length = 1
-    max_length = 50
-  }
-}
-
-schema {
-  name                = "family_name"
-  attribute_data_type = "String"
-  required            = true
-  mutable             = true
-  string_attribute_constraints {
-    min_length = 1
-    max_length = 50
-  }
-}
-
 email_configuration {
   email_sending_account = "COGNITO_DEFAULT"
 }
