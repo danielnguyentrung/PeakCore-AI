@@ -61,6 +61,7 @@ module "iam" {
   s3_frontend_arn = module.s3.s3_frontend_arn
   sqs_queue_arn = module.sqs.sqs_queue_arn
   sqs_notification_queue_arn = module.sqs.sqs_notification_queue_arn
+  peakcore_task_definition_arn = module.fargate.peakcore_task_definition_arn
 }
 
 # LAMBDA MODULE

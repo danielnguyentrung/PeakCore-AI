@@ -70,7 +70,6 @@ data "aws_iam_policy_document" "dynamodb_policy_doc" {
       "dynamodb:GetItem",
       "dynamodb:PutItem",
       "dynamodb:UpdateItem", 
-      "dynamodb:DeleteItem",
       "dynamodb:Query" 
     ]
     resources = [var.dynamodb_table_arn]
@@ -94,25 +93,44 @@ resource "aws_iam_policy" "dynamodb_policy" {
 
 #EventBridge 
 
-data "aws_iam_policy_document" "eventbridge_doc" {
+data "aws_iam_policy_document" "eventbridge_assume_role_doc" {
   statement {
-    effect = "Allow" 
+    effect = "Allow"
     actions = ["sts:AssumeRole"]
-  
-  principals {
-    type = "Service"
-    identifiers = ["events.amazonaws.com"]
+    principals {
+      type = "Service"
+      identifiers = ["events.amazonaws.com"]
     }
   }
 }
+
+data "aws_iam_policy_document" "eventbridge_permissions_doc" {
+  statement {
+    effect = "Allow" 
+    actions = ["ecs:RunTask"]
+    resources = [var.peakcore_task_definition_arn]
+  }
+  
+  statement {
+  effect = "Allow"
+  actions = ["iam:PassRole"]
+  resources = [aws_iam_role.fargate_execution_role.arn]
+  }
+}
+
 resource "aws_iam_role" "eventbridge_policy" {
-  name = "eventbrige-policy"
-  assume_role_policy = data.aws_iam_policy_document.eventbridge_doc.json
+  name = "eventbridge-policy"
+  assume_role_policy = data.aws_iam_policy_document.eventbridge_assume_role_doc.json
+}
+
+resource "aws_iam_policy" "eventbridge_permissions_policy" {
+  name      = "eventbrige-policy"
+  policy    = data.aws_iam_policy_document.eventbridge_permissions_doc.json
 }
 
 resource "aws_iam_role_policy_attachment" "eventbridge_policy_attachment" {
   role = aws_iam_role.eventbridge_policy.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+  policy_arn = aws_iam_policy.eventbridge_permissions_policy.arn 
 }
 
 # S3 
