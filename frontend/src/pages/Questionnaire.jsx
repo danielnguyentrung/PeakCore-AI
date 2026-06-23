@@ -31,8 +31,18 @@ export default function Questionnaire() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [cooldown, setCooldown] = useState(false)
   const { user, signOut } = useAuthenticator((context) => [context.user])
   const navigate = useNavigate()
+
+  const COOLDOWN_MS = 10 * 60 * 1000 // 10 minutes
+
+  useEffect(() => {
+    const last = localStorage.getItem('peakcore_last_submit')
+    if (last && Date.now() - parseInt(last) < COOLDOWN_MS) {
+      setCooldown(true)
+    }
+  }, [])
 
   const updateField = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -99,12 +109,44 @@ export default function Questionnaire() {
         throw new Error(data.error || 'Something went wrong')
       }
 
+      localStorage.setItem('peakcore_last_submit', Date.now().toString())
       setSubmitted(true)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (cooldown && !submitted) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+            <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Plan Already In Progress</h2>
+          <p className="text-gray-400 mb-2 text-sm">
+            Your workout plan is still being generated. Check your email — it should arrive within a few minutes.
+          </p>
+          <p className="text-gray-500 text-xs mb-8">You can regenerate again in 10 minutes.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => navigate('/workout')}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-opacity">
+              View My Plan
+            </button>
+            <button
+              onClick={() => { localStorage.removeItem('peakcore_last_submit'); setCooldown(false) }}
+              className="px-6 py-3 border border-[#1e1e1e] text-gray-400 text-sm rounded-xl hover:border-gray-500 hover:text-white transition-all">
+              Regenerate Anyway
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (submitted) {

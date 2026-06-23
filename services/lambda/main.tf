@@ -38,6 +38,7 @@ resource "aws_lambda_function" "peakcore_validation" {
     environment {
       variables = {
         SQS_QUEUE_URL = var.sqs_queue_url
+        DYNAMODB_TABLE_NAME = var.dynamodb_table_name
       }
     }
   }
@@ -64,7 +65,7 @@ resource "aws_lambda_function" "peakcore_core" {
   runtime       = "python3.12"
   handler       = "peakcore_core.lambda_handler"
   role          =  var.lambda_execution_role_arn
-  timeout       =  300
+  timeout       =  90
 
   filename         = data.archive_file.core_zip.output_path
   source_code_hash = data.archive_file.core_zip.output_base64sha256

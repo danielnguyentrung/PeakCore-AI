@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 import logging
+import time 
 from datetime import datetime, timezone
 from botocore.config import Config 
 
@@ -144,7 +145,7 @@ def db_store(user_id, email, profile, workout_plan):
             "email": email, 
             "profile": profile, 
             "workout_plan": workout_plan, 
-            "plan_generated_at": datetime.now(timezone.utc).isoformat()
+            "plan_generated_at": int(time.time())
         }
     )
 
@@ -184,7 +185,9 @@ def lambda_handler(event, context):
 
         Your personalized workout plan is ready. 
 
-        Our AI has built a plan tailored specifically to your goals, fitness level, and schedule. No guess work. Just results!
+        Our AI has built a plan tailored specifically to your goals, fitness level, and schedule. 
+        
+        No guess work. Just results!
 
         View your plan here:
         {APP_URL}/workout

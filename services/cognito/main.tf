@@ -1,6 +1,10 @@
 resource "aws_cognito_user_pool" "peakcore_user_pool" {
     name = "peakcore-user-pool"
 
+    username_configuration {
+      case_sensitive = false 
+    }
+
 
 username_attributes = ["email"]
 auto_verified_attributes = ["email"] 

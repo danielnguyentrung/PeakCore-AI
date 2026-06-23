@@ -2,12 +2,16 @@ import json
 import boto3
 import os 
 import logging
+import time
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 sqs = boto3.client("sqs")
 SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
+dynamodb = boto3.resource("dynamodb")
+DYNAMODB_TABLE_NAME = os.environ["DYNAMODB_TABLE_NAME"]
+COOLDOWN_SECONDS = 30 * 60 
 
 input_fields = {
     "first_name": str,
@@ -29,6 +33,26 @@ input_fields = {
 }
 
 multiselect_fields = ["goals"]
+
+def set_cooldown(user_id): 
+    table = dynamodb.Table(DYNAMODB_TABLE_NAME)
+
+    table.update_item(
+        Key={"user_id": user_id},
+        UpdateExpression="SET plan_generated_at = :t",
+        ExpressionAttributeValues={":t": int(time.time())}
+    )
+
+def cooldown_check(user_id):
+    table = dynamodb.Table(DYNAMODB_TABLE_NAME)
+    response = table.get_item(Key={"user_id": user_id})
+    item = response.get("Item", {})
+
+    plan_date = item.get("plan_generated_at")
+
+    if plan_date and int(time.time()) - int(plan_date) < COOLDOWN_SECONDS:
+        return {"statusCode": 429, "body": json.dumps({"message": "Too many request. Please try again later."})}
+
 
 def input_validation(body, input_fields):
 
@@ -89,10 +113,16 @@ def lambda_handler(event, context):
     conditional_error = conditional_validation(body)
     if conditional_error:
         return conditional_error
-    
+      
     claims = event["requestContext"]["authorizer"]["claims"]
     user_email = claims["email"]
     user_id = claims["sub"]
+
+    cooldown_error = cooldown_check(user_id)
+    if cooldown_error:
+        return cooldown_error
+
+    set_cooldown(user_id)
 
     message = {
         "user_id": user_id,
