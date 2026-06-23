@@ -1,8 +1,8 @@
 const awsExports = {
   Auth: {
     Cognito: {
-      userPoolId: 'us-east-1_w3k8lATmE',
-      userPoolClientId: '6rh4prcikbaruif71cc9uevmql',
+      userPoolId: 'us-east-1_E60AuDa1z',
+      userPoolClientId: '1ojq9inmfunsj3klqi79jac8hq',
       loginWith: {
         email: true,
       },

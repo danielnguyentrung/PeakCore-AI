@@ -39,7 +39,7 @@ def send_email(email, first_name):
         }
     )
 
-    logger.info(f"reminder email sent to {email}")
+    logger.info(f"reminder email sent to {email[:3]}***@***")
     return
 
 def lambda_handler(event, context):
@@ -54,9 +54,9 @@ def lambda_handler(event, context):
 
         if is_plan_stale(fitness_rank, plan_generated_at):
             send_email(email, first_name)
-            logger.info(f"Sent reminder email to {user_id}")
+            logger.info(f"Sent reminder email to {email[:3]}***@***")
         else:
-            logger.info(f"Plan not stale yet for {user_id}, skipping")
+            logger.info(f"Plan not stale yet for {email[:3]}***@***, skipping")
 
         
 

@@ -39,11 +39,9 @@ data "aws_iam_policy_document" "bedrock_policy_doc" {
 
     actions = [
       "bedrock:InvokeModel", 
-      "bedrock:Converse",
-      "aws-marketplace:ViewSubscriptions",
-      "aws-marketplace:Subscribe"
+      "bedrock:Converse"
     ]
-    resources = ["*"]
+    resources = ["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude*"]
   }
 }
 
@@ -73,8 +71,7 @@ data "aws_iam_policy_document" "dynamodb_policy_doc" {
       "dynamodb:PutItem",
       "dynamodb:UpdateItem", 
       "dynamodb:DeleteItem",
-      "dynamodb:Query",
-      "dynamodb:Scan" 
+      "dynamodb:Query" 
     ]
     resources = [var.dynamodb_table_arn]
   }
@@ -196,7 +193,7 @@ data "aws_iam_policy_document" "ses_policy_doc" {
       "ses:SendEmail", 
       "ses:SendRawEmail"
     ]
-    resources = ["*"]
+    resources = ["arn:aws:ses:us-east-1:067514126410:identity/trung.daniel.nguyen@gmail.com"]
   }
 }
 

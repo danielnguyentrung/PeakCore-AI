@@ -35,7 +35,7 @@ resource "aws_cognito_user_pool_client" "peakcore_client" {
 
     generate_secret = false
 
-    read_attributes  = ["email", "given_name", "family_name"]
+    read_attributes  = ["email", "email_verified", "given_name", "family_name"]
     write_attributes = ["email", "given_name", "family_name"]
 
     explicit_auth_flows = [

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(aws cloudfront list-distributions --query \"DistributionList.Items[].{ID:Id,Domain:DomainName}\" --output table)"
+      "PowerShell(aws cloudfront list-distributions --query \"DistributionList.Items[].{ID:Id,Domain:DomainName}\" --output table)",
+      "Bash(terraform output *)"
     ]
   }
 }

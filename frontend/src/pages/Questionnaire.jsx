@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import { fetchAuthSession } from 'aws-amplify/auth'
@@ -32,6 +32,7 @@ export default function Questionnaire() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [cooldown, setCooldown] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(0)
   const { user, signOut } = useAuthenticator((context) => [context.user])
   const navigate = useNavigate()
 
@@ -39,9 +40,22 @@ export default function Questionnaire() {
 
   useEffect(() => {
     const last = localStorage.getItem('peakcore_last_submit')
-    if (last && Date.now() - parseInt(last) < COOLDOWN_MS) {
-      setCooldown(true)
-    }
+    if (!last) return
+    const remaining = COOLDOWN_MS - (Date.now() - parseInt(last))
+    if (remaining <= 0) return
+    setCooldown(true)
+    setTimeLeft(Math.ceil(remaining / 1000))
+    const interval = setInterval(() => {
+      const rem = COOLDOWN_MS - (Date.now() - parseInt(last))
+      if (rem <= 0) {
+        clearInterval(interval)
+        setCooldown(false)
+        setTimeLeft(0)
+      } else {
+        setTimeLeft(Math.ceil(rem / 1000))
+      }
+    }, 1000)
+    return () => clearInterval(interval)
   }, [])
 
   const updateField = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
@@ -131,17 +145,15 @@ export default function Questionnaire() {
           <p className="text-gray-400 mb-2 text-sm">
             Your workout plan is still being generated. Check your email — it should arrive within a few minutes.
           </p>
-          <p className="text-gray-500 text-xs mb-8">You can regenerate again in 10 minutes.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <p className="text-gray-500 text-xs mb-3">You can regenerate again in:</p>
+          <p className="text-4xl font-bold text-white font-mono mb-8 tabular-nums">
+            {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+          </p>
+          <div className="flex justify-center">
             <button
               onClick={() => navigate('/workout')}
               className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-400 text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-opacity">
               View My Plan
-            </button>
-            <button
-              onClick={() => { localStorage.removeItem('peakcore_last_submit'); setCooldown(false) }}
-              className="px-6 py-3 border border-[#1e1e1e] text-gray-400 text-sm rounded-xl hover:border-gray-500 hover:text-white transition-all">
-              Regenerate Anyway
             </button>
           </div>
         </div>

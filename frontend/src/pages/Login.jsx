@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react'
 
 const components = {
+  Header() {
+    const { route, skipVerification } = useAuthenticator((ctx) => [ctx.route])
+    useEffect(() => {
+      if (route === 'verifyUser' && typeof skipVerification === 'function') {
+        skipVerification()
+      }
+    }, [route, skipVerification])
+    return null
+  },
   SignUp: {
     FormFields() {
       return (

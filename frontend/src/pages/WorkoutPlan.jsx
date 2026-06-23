@@ -126,11 +126,16 @@ const parsePlan = (text) => {
       continue
     }
 
-    // Bullet points (rest days, recommendation sections)
+    // Bullet points — attach to current block if inside one, otherwise to day
     const bullet = line.match(/^[-*]\s+(.+)$/)
     if (bullet && day && !exercise) {
-      if (!day.notes) day.notes = []
-      day.notes.push(clean(bullet[1]))
+      if (block) {
+        if (!block.notes) block.notes = []
+        block.notes.push(clean(bullet[1]))
+      } else {
+        if (!day.notes) day.notes = []
+        day.notes.push(clean(bullet[1]))
+      }
       continue
     }
 
@@ -440,11 +445,23 @@ function WorkoutBlock({ block }) {
     <div>
       {block.title && <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-3">{block.title}</p>}
       {block.note && <p className="text-gray-400 text-xs italic mb-3 leading-relaxed">{block.note}</p>}
-      <div className="space-y-2">
-        {block.exercises.map((ex, i) => (
-          <ExerciseCard key={i} exercise={ex} />
-        ))}
-      </div>
+      {block.exercises.length > 0 && (
+        <div className="space-y-2">
+          {block.exercises.map((ex, i) => (
+            <ExerciseCard key={i} exercise={ex} />
+          ))}
+        </div>
+      )}
+      {block.notes && block.notes.length > 0 && (
+        <div className="space-y-1.5 mt-2">
+          {block.notes.map((note, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-gray-400">
+              <span className="text-cyan-500/70 mt-0.5 flex-shrink-0">•</span>
+              <span>{note}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

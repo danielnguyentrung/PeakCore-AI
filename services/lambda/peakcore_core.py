@@ -164,7 +164,7 @@ def send_email(email, message):
                 }
             }
         )
-    logger.info(f"Sent workout plan email to {email}")
+    logger.info(f"Sent workout plan email to {email[:3]}***@***")
     return
 
 
