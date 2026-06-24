@@ -17,8 +17,3 @@ variable "sqs_notification_queue_arn" {
     description = "ARN of the notification queue" 
     type = string
 }
-
-variable "peakcore_task_definition_arn" {
-    description = "ARN of the ECS Task Definition"
-    type = string 
-}

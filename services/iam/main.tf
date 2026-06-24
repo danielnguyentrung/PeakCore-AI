@@ -108,7 +108,7 @@ data "aws_iam_policy_document" "eventbridge_permissions_doc" {
   statement {
     effect = "Allow" 
     actions = ["ecs:RunTask"]
-    resources = [var.peakcore_task_definition_arn]
+    resources = ["arn:aws:ecs:us-east-1:*:task-definition/peakcore_task*"]
   }
   
   statement {
