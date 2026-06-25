@@ -1,0 +1,79 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067514126410:role/github-actions-role
+          aws-region: us-east-1
+
+      - name: Sync to S3
+        run: aws s3 sync dist/ s3://peakcore-frontend --delete
+        working-directory: frontend
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id E1VL9XOJIMHO28 --paths "/*"
+
+  deploy-lambdas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067514126410:role/github-actions-role
+          aws-region: us-east-1
+
+      - name: Deploy peakcore-validation
+        working-directory: services/lambda
+        run: |
+          zip function.zip peakcore_validation.py
+          aws lambda update-function-code --function-name peakcore-validation --zip-file fileb://function.zip
+          rm function.zip
+
+      - name: Deploy peakcore-read
+        working-directory: services/lambda
+        run: |
+          zip function.zip peakcore_read.py
+          aws lambda update-function-code --function-name peakcore-read --zip-file fileb://function.zip
+          rm function.zip
+
+      - name: Deploy peakcore-core
+        working-directory: services/lambda
+        run: |
+          zip function.zip peakcore_core.py
+          aws lambda update-function-code --function-name peakcore-core --zip-file fileb://function.zip
+          rm function.zip
+
+      - name: Deploy peakcore-check
+        working-directory: services/lambda
+        run: |
+          zip function.zip peakcore_check.py
+          aws lambda update-function-code --function-name peakcore-check --zip-file fileb://function.zip
+          rm function.zip
