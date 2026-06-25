@@ -20,7 +20,7 @@ output "peakcore_validation_name" {
 
 output "peakcore_read_arn" {
   description = "Name of the PeakCore Read Lambda Function"
-  value     = aws_lambda_function.peakcore_read.arn
+  value       = aws_lambda_function.peakcore_read.arn
 }
 
 output "peakcore_read_name" {

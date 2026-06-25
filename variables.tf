@@ -11,12 +11,12 @@ variable "email_sender" {
 
 variable "peakcore_model" {
   description = "AI Model for Bedrock"
-  type = string 
-  default = "PLACEHOLDER"
+  type        = string
+  default     = "PLACEHOLDER"
 }
 
 variable "app_url" {
   description = "Frontend app URL for email links"
-  type = string 
-  default = "https://placeholder.cloudfront.net"
+  type        = string
+  default     = "https://placeholder.cloudfront.net"
 }

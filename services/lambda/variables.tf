@@ -5,17 +5,17 @@ variable "lambda_execution_role_arn" {
 
 variable "sqs_queue_arn" {
   description = "ARN of the peakcore queue"
-  type        = string 
+  type        = string
 }
 
 variable "sqs_queue_url" {
   description = "URL of the PeakCore queue"
-  type        = string 
+  type        = string
 }
 
 variable "sqs_notification_queue_arn" {
   description = "ARN of the notification queue"
-  type = string 
+  type        = string
 }
 
 variable "dynamodb_table_name" {
@@ -35,7 +35,7 @@ variable "ses_sender_email" {
 
 variable "app_url" {
   description = "Frontend app URL for email links"
-  type        = string 
+  type        = string
 }
 
 

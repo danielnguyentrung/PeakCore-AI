@@ -15,5 +15,5 @@ output "fargate_execution_role_arn" {
 
 output "eventbridge_role_arn" {
   description = "AWS ARN of the EventBridge execution role"
-  value = aws_iam_role.eventbridge_policy.arn
+  value       = aws_iam_role.eventbridge_policy.arn
 }

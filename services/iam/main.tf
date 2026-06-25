@@ -38,7 +38,7 @@ data "aws_iam_policy_document" "bedrock_policy_doc" {
     effect = "Allow"
 
     actions = [
-      "bedrock:InvokeModel", 
+      "bedrock:InvokeModel",
       "bedrock:Converse"
     ]
     resources = ["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude*"]
@@ -48,14 +48,14 @@ data "aws_iam_policy_document" "bedrock_policy_doc" {
 # Bedrock Policy 
 
 resource "aws_iam_policy" "bedrock_invoke_policy" {
-  name = "bedrock-invoke-policy"
+  name   = "bedrock-invoke-policy"
   policy = data.aws_iam_policy_document.bedrock_policy_doc.json
 }
 
 # Bedrock Policy attachment to Lambda Function
 
 resource "aws_iam_role_policy_attachment" "bedrock_policy_attachment" {
-  role    = aws_iam_role.lambda_execution_role.name 
+  role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.bedrock_invoke_policy.arn
 }
 
@@ -63,14 +63,14 @@ resource "aws_iam_role_policy_attachment" "bedrock_policy_attachment" {
 
 # JSON of DynamoDB IAM Policy 
 
-data "aws_iam_policy_document" "dynamodb_policy_doc" { 
+data "aws_iam_policy_document" "dynamodb_policy_doc" {
   statement {
-    effect = "Allow" 
+    effect = "Allow"
     actions = [
       "dynamodb:GetItem",
       "dynamodb:PutItem",
-      "dynamodb:UpdateItem", 
-      "dynamodb:Query" 
+      "dynamodb:UpdateItem",
+      "dynamodb:Query"
     ]
     resources = [var.dynamodb_table_arn]
   }
@@ -80,25 +80,25 @@ data "aws_iam_policy_document" "dynamodb_policy_doc" {
 # DynamoDB policy 
 
 resource "aws_iam_policy" "dynamodb_policy" {
-  name = "dynamodb-policy"
+  name   = "dynamodb-policy"
   policy = data.aws_iam_policy_document.dynamodb_policy_doc.json
 }
 
 # DynamoDB policy attachment to Lambda Function
 
-  resource "aws_iam_role_policy_attachment" "dynamodb_policy_attachment" {
-    role    = aws_iam_role.lambda_execution_role.name
-    policy_arn = aws_iam_policy.dynamodb_policy.arn
+resource "aws_iam_role_policy_attachment" "dynamodb_policy_attachment" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.dynamodb_policy.arn
 }
 
 #EventBridge 
 
 data "aws_iam_policy_document" "eventbridge_assume_role_doc" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["events.amazonaws.com"]
     }
   }
@@ -106,31 +106,31 @@ data "aws_iam_policy_document" "eventbridge_assume_role_doc" {
 
 data "aws_iam_policy_document" "eventbridge_permissions_doc" {
   statement {
-    effect = "Allow" 
-    actions = ["ecs:RunTask"]
+    effect    = "Allow"
+    actions   = ["ecs:RunTask"]
     resources = ["arn:aws:ecs:us-east-1:*:task-definition/peakcore_task*"]
   }
-  
+
   statement {
-  effect = "Allow"
-  actions = ["iam:PassRole"]
-  resources = [aws_iam_role.fargate_execution_role.arn]
+    effect    = "Allow"
+    actions   = ["iam:PassRole"]
+    resources = [aws_iam_role.fargate_execution_role.arn]
   }
 }
 
 resource "aws_iam_role" "eventbridge_policy" {
-  name = "eventbridge-policy"
+  name               = "eventbridge-policy"
   assume_role_policy = data.aws_iam_policy_document.eventbridge_assume_role_doc.json
 }
 
 resource "aws_iam_policy" "eventbridge_permissions_policy" {
-  name      = "eventbrige-policy"
-  policy    = data.aws_iam_policy_document.eventbridge_permissions_doc.json
+  name   = "eventbrige-policy"
+  policy = data.aws_iam_policy_document.eventbridge_permissions_doc.json
 }
 
 resource "aws_iam_role_policy_attachment" "eventbridge_policy_attachment" {
-  role = aws_iam_role.eventbridge_policy.name
-  policy_arn = aws_iam_policy.eventbridge_permissions_policy.arn 
+  role       = aws_iam_role.eventbridge_policy.name
+  policy_arn = aws_iam_policy.eventbridge_permissions_policy.arn
 }
 
 # S3 
@@ -145,7 +145,7 @@ data "aws_iam_policy_document" "s3_policy_doc" {
   }
 
   statement {
-    effect = "Allow" 
+    effect = "Allow"
     actions = [
       "s3:GetObject",
       "s3:PutObject",
@@ -158,14 +158,14 @@ data "aws_iam_policy_document" "s3_policy_doc" {
 # S3 policy 
 
 resource "aws_iam_policy" "s3_policy" {
-  name = "s3-policy"
+  name   = "s3-policy"
   policy = data.aws_iam_policy_document.s3_policy_doc.json
 }
 
 # s3 policy attachment 
 
 resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
-  role = aws_iam_role.lambda_execution_role.name 
+  role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.s3_policy.arn
 }
 
@@ -178,7 +178,7 @@ data "aws_iam_policy_document" "sqs_policy_doc" {
     effect = "Allow"
     actions = [
       "sqs:SendMessage",
-      "sqs:ReceiveMessage", 
+      "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes"
     ]
@@ -189,14 +189,14 @@ data "aws_iam_policy_document" "sqs_policy_doc" {
 # SQS Queue Policy
 
 resource "aws_iam_policy" "sqs_policy" {
-  name = "sqs-policy" 
+  name   = "sqs-policy"
   policy = data.aws_iam_policy_document.sqs_policy_doc.json
 }
 
 # SQS Policy Attachment 
 
 resource "aws_iam_role_policy_attachment" "sqs_policy_attachment" {
-  role = aws_iam_role.lambda_execution_role.name
+  role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.sqs_policy.arn
 }
 
@@ -208,7 +208,7 @@ data "aws_iam_policy_document" "ses_policy_doc" {
   statement {
     effect = "Allow"
     actions = [
-      "ses:SendEmail", 
+      "ses:SendEmail",
       "ses:SendRawEmail"
     ]
     resources = ["arn:aws:ses:us-east-1:067514126410:identity/trung.daniel.nguyen@gmail.com"]
@@ -218,14 +218,14 @@ data "aws_iam_policy_document" "ses_policy_doc" {
 # SES Policy
 
 resource "aws_iam_policy" "ses_policy" {
-  name = "ses-policy" 
-  policy = data.aws_iam_policy_document.ses_policy_doc.json 
+  name   = "ses-policy"
+  policy = data.aws_iam_policy_document.ses_policy_doc.json
 }
 
 # SES Policy Attachment
 
 resource "aws_iam_role_policy_attachment" "ses_policy_attachment" {
-  role = aws_iam_role.lambda_execution_role.name
+  role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.ses_policy.arn
 }
 
@@ -233,23 +233,23 @@ resource "aws_iam_role_policy_attachment" "ses_policy_attachment" {
 
 data "aws_iam_policy_document" "fargate_policy_doc" {
   statement {
-    effect = "Allow" 
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
-  
-  principals {
-    type = "Service"
-    identifiers = ["ecs-tasks.amazonaws.com"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
     }
   }
 }
 
 resource "aws_iam_role" "fargate_execution_role" {
-  name = "fargate-execution-role"
+  name               = "fargate-execution-role"
   assume_role_policy = data.aws_iam_policy_document.fargate_policy_doc.json
 }
 
 resource "aws_iam_role_policy_attachment" "fargate_policy_attachment" {
-  role = aws_iam_role.fargate_execution_role.name
+  role       = aws_iam_role.fargate_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
