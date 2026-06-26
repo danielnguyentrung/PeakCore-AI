@@ -46,9 +46,9 @@ Users create an account on the PeakCore AI website and fill out a questionnaire 
 4. The validation Lambda function checks that all fields in the questionnaire have been provided. It also sets a cooldown timer on submission to prevent duplicate requests. If the user submits multiple requests within the cooldown period, they will be denied until the timer expires.
 5. Once the data has been validated, the validation Lambda sends the data to an SQS queue, which triggers the core Lambda function.
 6. The core Lambda function will:
-- Send the questionnaire data to Amazon Bedrock using a Claude AI model to generate a personalized workout plan
-- Store the user data and AI-generated workout plan in DynamoDB
-- Send an email to the user via SES with a link to view their workout plan on the website
+    - Send the questionnaire data to Amazon Bedrock using a Claude AI model to generate a personalized workout plan
+    - Store the user data and AI-generated workout plan in DynamoDB
+    - Send an email to the user via SES with a link to view their workout plan on the website
 
 #### Returning Users 
 
@@ -62,8 +62,8 @@ Users create an account on the PeakCore AI website and fill out a questionnaire 
 1. EventBridge triggers a Fargate task every day at midnight to scan DynamoDB and evaluate the age of each user's workout plan based on their fitness level.
 2. Once the scan is complete, the data is sent to the notification SQS queue.
 3. The check Lambda function processes each record:
-- If the workout plan is stale, an email is sent to the user via SES prompting them to generate a new plan.
-- If the workout plan is not stale, no action is taken.
+    - If the workout plan is stale, an email is sent to the user via SES prompting them to generate a new plan.
+    - If the workout plan is not stale, no action is taken.
 
 
 ### Architecture Diagram
