@@ -66,6 +66,14 @@ Users create an account on the PeakCore AI website and fill out a questionnaire 
     - If the workout plan is not stale, no action is taken.
 
 
-### Architecture Diagram
+## Architecture Diagram
+
+### PeakCore Architecture Overview
+
+### Stale Notification Architecture
+
+## Live Demo
+[PeakCore AI](https://d28mrqncy1yaev.cloudfront.net)
 
 ## Lessons Learned 
+
