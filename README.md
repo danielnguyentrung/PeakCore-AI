@@ -78,5 +78,14 @@ Users create an account on the PeakCore AI website and fill out a questionnaire 
 [PeakCore AI](https://d28mrqncy1yaev.cloudfront.net)
 <img width="2547" height="1227" alt="PeakCore Frontend" src="https://github.com/user-attachments/assets/6de4d5f0-8ea2-45c3-9ef3-057f1b01e32e" />
 
-## Lessons Learned 
+## Lessons Learned
 
+- **Cost management matters early.** My AWS account was charged $60 due to two issues: Fargate running 24/7 without being stopped, and spamming the generate workout plan button during testing which triggered an SQS message storm. This taught me to always disable idle infrastructure and implement safeguards. I added a cooldown timer on both the frontend and backend to prevent duplicate submissions.
+
+- **SQS visibility timeout must exceed Lambda execution time.** I was receiving double emails and traced it back to the SQS visibility timeout being set shorter than the Lambda timeout, causing messages to be redelivered while still being processed. Increasing the visibility timeout resolved the issue.
+
+- **Least privilege IAM is non-negotiable.** I conducted a full security audit and tightened all IAM policies to follow the principle of least privilege by scoping each policy to specific ARNs rather than using wildcard resources. I also masked user email addresses in CloudWatch logs to prevent PII exposure.
+
+- **OIDC creates a secure trust relationship between GitHub and AWS.** Instead of storing long-lived AWS access keys as GitHub secrets, I configured OIDC to allow GitHub Actions to assume a scoped IAM role directly. This eliminates the risk of credential exposure.
+
+- **Silent failures are dangerous.** I configured Boto3 retry settings to ensure failures in Bedrock calls surface properly in CloudWatch logs rather than failing silently, making debugging significantly easier.
