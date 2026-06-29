@@ -1,3 +1,4 @@
+<img width="1522" height="1411" alt="PeakCore Overview Diagram" src="https://github.com/user-attachments/assets/00228a74-b3a1-4a2f-b0bc-54d44a013f27" />
 # PeakCore AI 
 
 An AI-powered fitness application that generates personalized workout plans built on AWS leveraging Amazon S3, CloudFront, API Gateway, AWS Cognito, SQS, Lambda, Bedrock, SES, and Eventbridge. 
@@ -69,11 +70,14 @@ Users create an account on the PeakCore AI website and fill out a questionnaire 
 ## Architecture Diagram
 
 ### PeakCore Architecture Overview
+<img width="1522" height="1411" alt="PeakCore Overview Diagram" src="https://github.com/user-attachments/assets/828b2cd2-faf4-473a-9207-aff944dc68cb" />
 
 ### Stale Notification Architecture
+<img width="711" height="595" alt="Stale Notification Architecture" src="https://github.com/user-attachments/assets/d7a2d397-1810-4acc-ab7e-aeb02c9af89f" />
 
 ## Live Demo
 [PeakCore AI](https://d28mrqncy1yaev.cloudfront.net)
+<img width="2547" height="1227" alt="PeakCore Frontend" src="https://github.com/user-attachments/assets/6de4d5f0-8ea2-45c3-9ef3-057f1b01e32e" />
 
 ## Lessons Learned 
 
