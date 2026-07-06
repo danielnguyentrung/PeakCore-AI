@@ -41,7 +41,10 @@ data "aws_iam_policy_document" "bedrock_policy_doc" {
       "bedrock:InvokeModel",
       "bedrock:Converse"
     ]
-    resources = ["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude*"]
+    resources = [
+      "arn:aws:bedrock:*::foundation-model/anthropic.claude*",
+      "arn:aws:bedrock:*:067514126410:inference-profile/us.anthropic.claude*"
+    ]
   }
 }
 
