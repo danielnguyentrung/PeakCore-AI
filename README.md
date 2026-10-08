@@ -89,3 +89,5 @@ Users create an account on the PeakCore AI website and fill out a questionnaire 
 - **OIDC creates a secure trust relationship between GitHub and AWS.** Instead of storing long-lived AWS access keys as GitHub secrets, I configured OIDC to allow GitHub Actions to assume a scoped IAM role directly. This eliminates the risk of credential exposure.
 
 - **Silent failures are dangerous.** I configured Boto3 retry settings to ensure failures in Bedrock calls surface properly in CloudWatch logs rather than failing silently, making debugging significantly easier.
+
+test
